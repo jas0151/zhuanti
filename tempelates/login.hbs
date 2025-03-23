@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusMatch - Login</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="login.css">
+    <style>
+        .error-message {
+            color: #e74c3c;
+            background-color: rgba(231, 76, 60, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        .google-suggestion {
+            margin-top: 10px;
+            text-align: center;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .google-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 15px;
+            background-color: #4285F4;
+            color: white;
+            border-radius: 5px;
+            margin: 10px auto;
+            width: 220px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+        
+        .google-btn i {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+        .google-btn:hover {
+            background-color: #3367D6;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <nav class="nav">
+            <div class="nav-container">
+                <a href="/" class="nav-logo">CampusMatch</a>
+                <div class="nav-menu" id="navMenu">
+                    <ul>
+                        <li><a href="/services" class="link">
+                            <i class='bx bx-server'></i>Services
+                        </a></li>
+                        <li><a href="/about" class="link">
+                            <i class='bx bx-info-circle'></i>About
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="form-box">
+            <div class="login-container">
+                <div class="top">
+                    <i class='bx bx-user-circle'></i>
+                    <h1>Welcome Back</h1>
+                    <p>Please sign in to continue</p>
+                </div>
+                
+                {{#if error}}
+                <div class="error-message">
+                    {{error}}
+                    {{#if isGoogleAccount}}
+                    <div class="google-suggestion">
+                        <p>Use Google Sign-in instead:</p>
+                        <a href="/auth/google" class="google-btn">
+                            <i class='bx bxl-google'></i>
+                            Sign in with Google
+                        </a>
+                    </div>
+                    {{/if}}
+                </div>
+                {{/if}}
+                
+                {{#if errorParam}}
+                <div class="error-message">
+                    {{#if_eq errorParam "google_auth_failed"}}
+                        Google authentication failed. Please try again.
+                    {{else if_eq errorParam "internal_error"}}
+                        Internal server error. Please try again later.
+                    {{else if_eq errorParam "auth_failed"}}
+                        Authentication failed. Please try again.
+                    {{else if_eq errorParam "session_error"}}
+                        Session error. Please try again.
+                    {{else if_eq errorParam "oauth_configuration"}}
+                        OAuth configuration error. Please contact support.
+                    {{else}}
+                        An error occurred. Please try again.
+                    {{/if_eq}}
+                </div>
+                {{/if}}
+                
+                <form action="/login" method="post" id="loginForm">
+                    <div class="input-box">
+                        <input type="text" class="input-field" name="email" placeholder="Email" required>
+                        <i class="bx bx-user"></i>
+                    </div>
+                    <div class="input-box">
+                        <input type="password" class="input-field" name="password" placeholder="Password" required>
+                        <i class="bx bx-lock-alt"></i>
+                        <i class="bx bx-show toggle-password"></i>
+                    </div>
+                    <div class="input-box">
+                        <button type="submit" class="submit">
+                            <span>Login</span>
+                            <i class='bx bx-right-arrow-alt'></i>
+                        </button>
+                    </div>
+                    <div class="two-col">
+                        <div class="one">
+                            <input type="checkbox" id="rememberMe" name="rememberMe">
+                            <label for="rememberMe">Remember Me</label>
+                        </div>
+                        <div class="two">
+                            <a href="/forgot-password" class="forgot-link">Forgot Password?</a>
+                        </div>
+                    </div>
+                    <div class="divider">
+                        <span>or continue with</span>
+                    </div>
+                    <div class="social-login">
+                        <a href="/auth/google" class="social-btn">
+                            <i class='bx bxl-google'></i>
+                        </a>
+                        <a href="/auth/github" class="social-btn">
+                            <i class='bx bxl-github'></i>
+                        </a>
+                        <a href="/auth/twitter" class="social-btn">
+                            <i class='bx bxl-twitter'></i>
+                        </a>
+                    </div>
+                    <div class="signup-link">
+                        <p>Don't have an account? <a href="/signup">Create new account</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Password Toggle
+        document.querySelector('.toggle-password').addEventListener('click', function() {
+            const passwordInput = document.querySelector('input[type="password"]');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                this.classList.remove('bx-show');
+                this.classList.add('bx-hide');
+            } else {
+                passwordInput.type = 'password';
+                this.classList.remove('bx-hide');
+                this.classList.add('bx-show');
+            }
+        });
+
+        // Form Animation
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('.submit');
+            submitBtn.style.opacity = '0.7';
+            setTimeout(() => {
+                submitBtn.style.opacity = '1';
+            }, 2000);
+        });
+        
+        // URL parameter parsing for error messages
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorParam = urlParams.get('error');
+            const messageParam = urlParams.get('message');
+            
+            if (errorParam && !document.querySelector('.error-message')) {
+                // Create error message element
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                
+                // Set error message based on parameter
+                switch (errorParam) {
+                    case 'google_auth_failed':
+                        errorDiv.textContent = 'Google authentication failed. Please try again.';
+                        break;
+                    case 'internal_error':
+                        errorDiv.textContent = 'Internal server error. Please try again later.';
+                        break;
+                    case 'auth_failed':
+                        errorDiv.textContent = 'Authentication failed. Please try again.';
+                        break;
+                    case 'session_error':
+                        errorDiv.textContent = 'Session error. Please try again.';
+                        break;
+                    case 'oauth_configuration':
+                        errorDiv.textContent = 'OAuth configuration error. Please contact support.';
+                        break;
+                    default:
+                        errorDiv.textContent = 'An error occurred. Please try again.';
+                }
+                
+                // Insert error message before the form
+                const form = document.getElementById('loginForm');
+                const topElement = document.querySelector('.top');
+                if (form && topElement) {
+                    form.parentNode.insertBefore(errorDiv, form);
+                    topElement.insertAdjacentElement('afterend', errorDiv);
+                }
+            }
+            
+            // Handle success messages
+            if (messageParam) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'success-message';
+                messageDiv.style = 'color: #2ecc71; background-color: rgba(46, 204, 113, 0.1); padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 14px; text-align: center;';
+                
+                switch (messageParam) {
+                    case 'password_reset_success':
+                        messageDiv.textContent = 'Your password has been reset successfully. Please sign in with your new password.';
+                        break;
+                    case 'logout_success':
+                        messageDiv.textContent = 'You have been logged out successfully.';
+                        break;
+                    default:
+                        messageDiv.textContent = 'Action completed successfully.';
+                }
+                
+                const form = document.getElementById('loginForm');
+                const topElement = document.querySelector('.top');
+                if (form && topElement) {
+                    topElement.insertAdjacentElement('afterend', messageDiv);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

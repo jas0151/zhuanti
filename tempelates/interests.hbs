@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{#if editing}}Edit{{else}}Select{{/if}} Your Interests - CampusMatch</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="interests.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">CampusMatch</a>
+            {{#if editing}}
+            <a href="/main" class="back-btn">Back to Profile</a>
+            {{/if}}
+        </div>
+    </nav>
+
+    <div class="interests-container">
+        <div class="interests-header">
+            <h1>{{#if editing}}Edit{{else}}Select{{/if}} Your Interests</h1>
+            <p>{{#if editing}}Update{{else}}Select{{/if}} your interests to help us find your perfect matches!</p>
+        </div>
+
+        <div class="interests-sections">
+            <!-- Hobbies Section -->
+            <div class="section">
+                <h2>Hobbies & Interests</h2>
+                <div class="interests-grid" id="hobbies">
+                    <div class="interest-item" data-value="sports"><i class='bx bx-basketball'></i>Sports</div>
+                    <div class="interest-item" data-value="music"><i class='bx bx-music'></i>Music</div>
+                    <div class="interest-item" data-value="art"><i class='bx bx-palette'></i>Art</div>
+                    <div class="interest-item" data-value="reading"><i class='bx bx-book'></i>Reading</div>
+                    <div class="interest-item" data-value="gaming"><i class='bx bx-game'></i>Gaming</div>
+                    <div class="interest-item" data-value="cooking"><i class='bx bx-dish'></i>Cooking</div>
+                </div>
+            </div>
+
+            <!-- Classes Section -->
+            <div class="section">
+                <h2>Classes</h2>
+                <div class="interests-grid" id="classes">
+                    <div class="interest-item" data-value="computerScience">Computer Science</div>
+                    <div class="interest-item" data-value="mathematics">Mathematics</div>
+                    <div class="interest-item" data-value="physics">Physics</div>
+                    <div class="interest-item" data-value="chemistry">Chemistry</div>
+                    <div class="interest-item" data-value="biology">Biology</div>
+                    <div class="interest-item" data-value="literature">Literature</div>
+                </div>
+            </div>
+
+            <!-- Clubs Section -->
+            <div class="section">
+                <h2>Clubs</h2>
+                <div class="interests-grid" id="clubs">
+                    <div class="interest-item" data-value="programmingClub">Programming Club</div>
+                    <div class="interest-item" data-value="debateClub">Debate Club</div>
+                    <div class="interest-item" data-value="sportsClub">Sports Club</div>
+                    <div class="interest-item" data-value="artClub">Art Club</div>
+                    <div class="interest-item" data-value="musicClub">Music Club</div>
+                    <div class="interest-item" data-value="chessClub">Chess Club</div>
+                </div>
+            </div>
+
+            <!-- Languages Section -->
+            <div class="section">
+                <h2>Languages</h2>
+                <div class="interests-grid" id="languages">
+                    <div class="interest-item" data-value="english">English</div>
+                    <div class="interest-item" data-value="chinese">Chinese</div>
+                    <div class="interest-item" data-value="spanish">Spanish</div>
+                    <div class="interest-item" data-value="french">French</div>
+                    <div class="interest-item" data-value="japanese">Japanese</div>
+                    <div class="interest-item" data-value="korean">Korean</div>
+                </div>
+            </div>
+        </div>
+
+        <form id="interestsForm" action="/create-interests" method="POST">
+            <input type="hidden" name="hobbies" id="hobbiesInput">
+            <input type="hidden" name="classes" id="classesInput">
+            <input type="hidden" name="clubs" id="clubsInput">
+            <input type="hidden" name="languages" id="languagesInput">
+            <button type="submit" class="continue-btn">{{#if editing}}Save Changes{{else}}Continue{{/if}}</button>
+        </form>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let selectedInterests = {
+            hobbies: [],
+            classes: [],
+            clubs: [],
+            languages: []
+        };
+
+        // Function to update hidden inputs
+        function updateHiddenInputs() {
+            document.getElementById('hobbiesInput').value = selectedInterests.hobbies.join(',');
+            document.getElementById('classesInput').value = selectedInterests.classes.join(',');
+            document.getElementById('clubsInput').value = selectedInterests.clubs.join(',');
+            document.getElementById('languagesInput').value = selectedInterests.languages.join(',');
+        }
+
+        // Load existing interests if they exist
+        {{#if user.profile.interests}}
+            // Hobbies
+            {{#each user.profile.interests.hobbies}}
+            selectedInterests.hobbies.push("{{this}}");
+            {{/each}}
+
+            // Classes
+            {{#each user.profile.interests.classes}}
+            selectedInterests.classes.push("{{this}}");
+            {{/each}}
+
+            // Clubs
+            {{#each user.profile.interests.clubs}}
+            selectedInterests.clubs.push("{{this}}");
+            {{/each}}
+
+            // Languages
+            {{#each user.profile.interests.languages}}
+            selectedInterests.languages.push("{{this}}");
+            {{/each}}
+
+            // Pre-select all existing interests visually
+            Object.keys(selectedInterests).forEach(category => {
+                selectedInterests[category].forEach(interest => {
+                    const item = document.querySelector(`#${category} .interest-item[data-value="${interest}"]`);
+                    if (item) {
+                        item.classList.add('selected');
+                    }
+                });
+            });
+        {{/if}}
+
+        // Update hidden inputs with initial values
+        updateHiddenInputs();
+
+        // Add click handlers to all interest items
+        document.querySelectorAll('.interest-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const category = this.closest('.interests-grid').id;
+                const value = this.dataset.value;
+
+                this.classList.toggle('selected');
+
+                if (this.classList.contains('selected')) {
+                    // Add interest if not already present
+                    if (!selectedInterests[category].includes(value)) {
+                        selectedInterests[category].push(value);
+                    }
+                } else {
+                    // Remove interest
+                    selectedInterests[category] = selectedInterests[category].filter(x => x !== value);
+                }
+
+                updateHiddenInputs();
+            });
+        });
+    });
+    </script>
+</body>
+</html>

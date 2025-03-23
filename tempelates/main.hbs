@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusMatch - Dashboard</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">CampusMatch</a>
+            <div class="nav-menu">
+                <ul class="nav-list">
+                    <li><a href="/main" class="active"><i class='bx bx-home'></i> Dashboard</a></li>
+                    <li><a href="/gallery"><i class='bx bx-images'></i> Gallery</a></li>
+                    <li><a href="/matches"><i class='bx bx-heart'></i> Matches</a></li>
+                    <li><a href="/logout" class="nav-signup"><i class='bx bx-log-out'></i> Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    {{#if success}}
+    <div class="success-toast" id="successToast">
+        {{#if_eq success "photo_uploaded"}}
+            <i class='bx bx-check-circle'></i> Profile photo updated successfully!
+        {{else}}
+            <i class='bx bx-check-circle'></i> Action completed successfully!
+        {{/if_eq}}
+        <button class="close-toast" type="button"><i class='bx bx-x'></i></button>
+    </div>
+    {{/if}}
+
+    <div class="dashboard">
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <div class="welcome-card">
+                    <div class="welcome-content">
+                        <h1>Welcome back, {{user.profile.firstName}}!</h1>
+                        <p>Here's what's happening with your campus connections today.</p>
+                    </div>
+                    <div class="welcome-image">
+                        <img src="/illustrations/dashboard-welcome.svg" alt="Welcome illustration">
+                    </div>
+                </div>
+
+                <div class="quick-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class='bx bx-user-plus'></i></div>
+                        <div class="stat-content">
+                            <h3>New Matches</h3>
+                            <p class="stat-value">5</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class='bx bx-message-detail'></i></div>
+                        <div class="stat-content">
+                            <h3>Messages</h3>
+                            <p class="stat-value">3</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class='bx bx-group'></i></div>
+                        <div class="stat-content">
+                            <h3>Study Groups</h3>
+                            <p class="stat-value">2</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-content">
+                <div class="dashboard-section profile-overview">
+                    <div class="section-header">
+                        <h2><i class='bx bx-user-circle'></i> Your Profile</h2>
+                        <a href="/profile" class="action-link">Edit Profile</a>
+                    </div>
+                    <div class="profile-card">
+                        <div class="profile-header">
+                            <div class="profile-avatar">
+                                {{#if user.profile.photo}}
+                                    <img src="/uploads/profiles/{{user.profile.photo}}" alt="Profile Photo">
+                                {{else}}
+                                    <img src="/default-avatar.png" alt="Default Avatar">
+                                {{/if}}
+                            </div>
+                            <div class="profile-info">
+                                <h3>{{user.profile.firstName}} {{user.profile.lastName}}</h3>
+                                <p class="profile-subtitle">{{user.profile.university}}</p>
+                                <p class="profile-details">{{user.profile.major}}, Year {{user.profile.yearOfStudy}}</p>
+                                <div class="profile-completion">
+    <div class="completion-bar">
+        <div class="completion-progress" style="width: {{profileCompletion}}%;"></div>
+    </div>
+    <p class="completion-text">Profile {{profileCompletion}}% complete</p>
+</div>
+                            </div>
+                        </div>
+                        <div class="profile-bio">
+                            <h4>About Me</h4>
+                            <p>{{user.profile.bio}}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-section interests-overview">
+                    <div class="section-header">
+                        <h2><i class='bx bx-heart'></i> Your Interests</h2>
+                        <a href="/edit-interests" class="action-link">Edit Interests</a>
+                    </div>
+                    <div class="interests-card">
+                        <div class="interests-grid">
+                            {{#if user.profile.interests}}
+                                {{#if user.profile.interests.hobbies.length}}
+                                <div class="interest-category">
+                                    <h4><i class='bx bx-joystick'></i> Hobbies</h4>
+                                    <div class="interest-tags">
+                                        {{#each user.profile.interests.hobbies}}
+                                            <span class="interest-tag">{{this}}</span>
+                                        {{/each}}
+                                    </div>
+                                </div>
+                                {{/if}}
+                                
+                                {{#if user.profile.interests.classes.length}}
+                                <div class="interest-category">
+                                    <h4><i class='bx bx-book'></i> Classes</h4>
+                                    <div class="interest-tags">
+                                        {{#each user.profile.interests.classes}}
+                                            <span class="interest-tag">{{this}}</span>
+                                        {{/each}}
+                                    </div>
+                                </div>
+                                {{/if}}
+                                
+                                {{#if user.profile.interests.clubs.length}}
+                                <div class="interest-category">
+                                    <h4><i class='bx bx-group'></i> Clubs</h4>
+                                    <div class="interest-tags">
+                                        {{#each user.profile.interests.clubs}}
+                                            <span class="interest-tag">{{this}}</span>
+                                        {{/each}}
+                                    </div>
+                                </div>
+                                {{/if}}
+                                
+                                {{#if user.profile.interests.languages.length}}
+                                <div class="interest-category">
+                                    <h4><i class='bx bx-conversation'></i> Languages</h4>
+                                    <div class="interest-tags">
+                                        {{#each user.profile.interests.languages}}
+                                            <span class="interest-tag">{{this}}</span>
+                                        {{/each}}
+                                    </div>
+                                </div>
+                                {{/if}}
+                            {{else}}
+                                <div class="empty-interests">
+                                    <p>You haven't added any interests yet. Adding interests helps you connect with like-minded students!</p>
+                                    <a href="/edit-interests" class="action-btn">Add Interests</a>
+                                </div>
+                            {{/if}}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-section gallery-overview">
+                    <div class="section-header">
+                        <h2><i class='bx bx-images'></i> Your Gallery</h2>
+                        <a href="/gallery" class="action-link">Manage Gallery</a>
+                    </div>
+                    <div class="gallery-card">
+    {{#if user.profile.galleryPhotos.length}}
+        <div class="gallery-grid">
+            {{#each user.profile.galleryPhotos}}
+                <div class="gallery-item {{#if isPrivate}}private{{/if}}" data-photo-id="{{this._id}}">
+                    <div class="gallery-image-container">
+                        <img src="/gallery-photo/{{../user._id}}/{{this._id}}" 
+                        alt="{{this.description}}"
+                        loading="lazy"
+                        onerror="this.onerror=null; this.src='/default-gallery-image.png'; this.classList.add('error-image');">
+                        
+                        {{#if isPrivate}}
+                            <div class="privacy-badge" title="This photo is private"><i class='bx bx-lock'></i></div>
+                        {{/if}}
+                        
+                        {{#if this.description}}
+                            <div class="photo-tooltip">{{this.description}}</div>
+                        {{/if}}
+                    </div>
+                    <div class="gallery-item-overlay">
+                        <a href="/gallery" class="gallery-action-btn">
+                            <i class='bx bx-edit'></i>
+                        </a>
+                    </div>
+                </div>
+            {{/each}}
+            
+            <div class="gallery-item add-photo">
+                <a href="/gallery" class="add-photo-btn">
+                    <i class='bx bx-plus'></i>
+                    <span>Add Photo</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="gallery-footer">
+            <a href="/gallery" class="view-all-link">
+                <span>View All Photos</span>
+                <i class='bx bx-chevron-right'></i>
+            </a>
+        </div>
+    {{else}}
+        <div class="empty-gallery">
+            <i class='bx bx-image-add'></i>
+            <p>Showcase your personality with photos!</p>
+            <p class="empty-gallery-desc">Adding photos helps others get to know you better and increases your match potential.</p>
+            <a href="/gallery" class="action-btn">
+                <i class='bx bx-plus-circle'></i>
+                Add Your First Photo
+            </a>
+        </div>
+    {{/if}}
+</div>
+
+                <div class="dashboard-section recommended-matches">
+    <div class="section-header">
+        <h2><i class='bx bx-user-plus'></i> Recommended Matches</h2>
+        <a href="/matches" class="action-link">View All Matches</a>
+    </div>
+    <div class="matches-preview">
+    {{#if recommendedMatches.length}}
+        <div class="match-card-container">
+            {{#each recommendedMatches}}
+                <div class="match-card" data-match-score="{{this.matchScore}}">
+                    <div class="match-photo-wrapper">
+                        <div class="match-photo">
+                            {{#if this.user.profile.photo}}
+                                <img src="/photo/{{this.user._id}}" 
+                                     alt="{{this.user.profile.firstName}}'s Photo"
+                                     loading="lazy"
+                                     onerror="this.onerror=null; this.src='/default-avatar.png'; this.classList.add('fallback-avatar');">
+                            {{else}}
+                                <img src="/default-avatar.png" alt="Default Avatar" class="fallback-avatar">
+                            {{/if}}
+                        </div>
+                        <div class="match-score-badge">
+                            <svg viewBox="0 0 36 36">
+                                <circle cx="18" cy="18" r="16" class="score-circle-bg"></circle>
+                                <circle cx="18" cy="18" r="16" class="score-circle-progress" 
+                                        style="stroke-dashoffset: calc(100 - {{this.matchScore}})"></circle>
+                            </svg>
+                            <span class="match-score-text">{{this.matchScore}}%</span>
+                        </div>
+                    </div>
+                    <div class="match-info">
+                        <h3>{{this.user.profile.firstName}} {{this.user.profile.lastName}}</h3>
+                        
+                        <div class="match-details">
+                            <span class="match-university" title="{{this.user.profile.university}}">
+                                <i class='bx bx-buildings'></i>
+                                {{this.user.profile.university}}
+                            </span>
+                            <span class="match-major" title="{{this.user.profile.major}}">
+                                <i class='bx bx-book'></i>
+                                {{this.user.profile.major}}
+                            </span>
+                        </div>
+                        
+                        {{#if this.user.profile.interests}}
+                            <div class="match-interests">
+                                {{#if this.user.profile.interests.hobbies}}
+                                    {{#each this.user.profile.interests.hobbies}}
+                                        {{#if @first}}
+                                            <span class="interest-chip">{{this}}</span>
+                                        {{/if}}
+                                    {{/each}}
+                                {{/if}}
+                                
+                                {{#if this.user.profile.interests.classes}}
+                                    {{#each this.user.profile.interests.classes}}
+                                        {{#if @first}}
+                                            <span class="interest-chip">{{this}}</span>
+                                        {{/if}}
+                                    {{/each}}
+                                {{/if}}
+                                
+                                <span class="interest-more">+{{this.commonInterestsCount}} more</span>
+                            </div>
+                        {{/if}}
+                        
+                        <a href="/view-profile/{{this.user._id}}" class="view-profile-btn">
+                            <span>View Profile</span>
+                            <i class='bx bx-chevron-right'></i>
+                        </a>
+                    </div>
+                </div>
+            {{/each}}
+        </div>
+        
+        <div class="matches-footer">
+            <a href="/matches" class="view-all-matches">
+                <span>View All Matches</span>
+                <i class='bx bx-chevron-right'></i>
+            </a>
+        </div>
+    {{else}}
+        <div class="empty-matches">
+            <i class='bx bx-search'></i>
+            <p>We're still finding matches for you!</p>
+            <p class="empty-matches-desc">Complete your profile and add more interests to get better match suggestions.</p>
+            <div class="empty-matches-actions">
+                <a href="/edit-interests" class="action-btn">
+                    <i class='bx bx-heart'></i>
+                    Update Interests
+                </a>
+                <a href="/edit-profile" class="action-btn secondary">
+                    <i class='bx bx-user-circle'></i>
+                    Complete Profile
+                </a>
+            </div>
+        </div>
+    {{/if}}
+</div>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <a href="/">CampusMatch</a>
+                    <p>Connect with your campus community.</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-section">
+                        <h4>Navigation</h4>
+                        <ul>
+                            <li><a href="/main">Dashboard</a></li>
+                            <li><a href="/gallery">Gallery</a></li>
+                            <li><a href="/matches">Matches</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Support</h4>
+                        <ul>
+                            <li><a href="/help">Help Center</a></li>
+                            <li><a href="/contact">Contact Us</a></li>
+                            <li><a href="/privacy">Privacy Policy</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Connect</h4>
+                        <div class="social-links">
+                            <a href="#"><i class='bx bxl-instagram'></i></a>
+                            <a href="#"><i class='bx bxl-twitter'></i></a>
+                            <a href="#"><i class='bx bxl-facebook'></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2024 CampusMatch. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Success toast handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const successToast = document.getElementById('successToast');
+            if (successToast) {
+                // Show the toast
+                setTimeout(() => {
+                    successToast.classList.add('show');
+                }, 300);
+                
+                // Auto hide after 5 seconds
+                setTimeout(() => {
+                    successToast.classList.remove('show');
+                    setTimeout(() => {
+                        successToast.style.display = 'none';
+                    }, 300);
+                }, 5000);
+                
+                // Close button
+                const closeBtn = successToast.querySelector('.close-toast');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function() {
+                        successToast.classList.remove('show');
+                        setTimeout(() => {
+                            successToast.style.display = 'none';
+                        }, 300);
+                    });
+                }
+            }
+        });
+        // Fix gallery images on main page
+document.querySelectorAll('.gallery-preview img').forEach(img => {
+    // If image fails to load, try alternative path
+    img.onerror = function() {
+        const originalSrc = this.src;
+        
+        // Try to extract user ID and photo ID from the path
+        const pathParts = originalSrc.split('/');
+        const filename = pathParts[pathParts.length - 1];
+        
+        // Use current user ID or extract from page
+        const userId = document.body.dataset.userId || 
+                       document.querySelector('meta[name="user-id"]')?.content ||
+                       window.location.pathname.split('/')[2];
+                       
+        // Replace with gallery-photo endpoint path
+        if (userId && this.closest('[data-photo-id]')) {
+            const photoId = this.closest('[data-photo-id]').dataset.photoId;
+            this.src = `/gallery-photo/${userId}/${photoId}`;
+        } else {
+            // Fallback to default image
+            this.src = '/default-gallery-image.png';
+        }
+    };
+});
+    </script>
+</body>
+<script>
+    // Auto-scroll for recommended matches
+    document.addEventListener('DOMContentLoaded', function() {
+        const matchContainer = document.querySelector('.match-card-container');
+        
+        if (matchContainer && matchContainer.children.length > 3) {
+            let scrollPosition = 0;
+            const scrollAmount = 300;
+            const maxScroll = matchContainer.scrollWidth - matchContainer.clientWidth;
+            
+            // Auto-scroll function
+            function autoScroll() {
+                scrollPosition += scrollAmount;
+                
+                // Reset when reaching the end
+                if (scrollPosition > maxScroll) {
+                    scrollPosition = 0;
+                }
+                
+                matchContainer.scrollTo({
+                    left: scrollPosition,
+                    behavior: 'smooth'
+                });
+            }
+            
+            // Start auto-scroll after 5 seconds, then every 7 seconds
+            setTimeout(() => {
+                const scrollInterval = setInterval(autoScroll, 7000);
+                
+                // Stop scrolling when user interacts with the container
+                matchContainer.addEventListener('mouseenter', () => {
+                    clearInterval(scrollInterval);
+                });
+                
+                // Optional: resume on mouse leave
+                // matchContainer.addEventListener('mouseleave', () => {
+                //     scrollInterval = setInterval(autoScroll, 7000);
+                // });
+            }, 5000);
+        }
+        
+        // Initialize match score circles animation
+        const scoreCircles = document.querySelectorAll('.score-circle-progress');
+        if (scoreCircles.length > 0) {
+            setTimeout(() => {
+                scoreCircles.forEach(circle => {
+                    const matchScore = circle.closest('.match-card').dataset.matchScore;
+                    circle.style.strokeDashoffset = `calc(100 - ${matchScore})`;
+                });
+            }, 500);
+        }
+    });
+</script>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusMatch - Connect with Your College Community</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="home.css">
+</head>
+<body>
+    {{#if userId}}
+    <!-- Logged-in user navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">CampusMatch</a>
+            <div class="nav-menu">
+                <ul class="nav-list">
+                    <li><a href="/main"><i class='bx bx-home'></i> Dashboard</a></li>
+                    <li><a href="/gallery"><i class='bx bx-images'></i> Gallery</a></li>
+                    <li><a href="/matches"><i class='bx bx-heart'></i> Matches</a></li>
+                    <li><a href="/logout" class="nav-signup"><i class='bx bx-log-out'></i> Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {{else}}
+    <!-- Non-logged-in user navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">CampusMatch</a>
+            <div class="nav-menu">
+                <ul class="nav-list">
+                    <li><a href="#features"><i class='bx bx-list-check'></i> Features</a></li>
+                    <li><a href="#how-it-works"><i class='bx bx-question-mark'></i> How It Works</a></li>
+                    <li><a href="login"><i class='bx bx-log-in'></i> Login</a></li>
+                    <li><a href="signup" class="nav-signup"><i class='bx bx-user-plus'></i> Get Started</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {{/if}}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusMatch - Connect with Your College Community</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="home.css">
+</head>
+<body>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Find Your Perfect Match on Campus</h1>
+            <p>Connect with like-minded students, discover study groups, and make lasting friendships through our intelligent matching system.</p>
+            <a href="signup" class="hero-btn">Start Matching</a>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <h2>Why Choose CampusMatch?</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-robot"></i>
+                <h3>Smart Matching</h3>
+                <p>Our AI-powered algorithm connects you with peers who share your academic interests and lifestyle preferences.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-comments"></i>
+                <h3>Secure Chat</h3>
+                <p>Connect safely with verified students through our encrypted messaging platform.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-house-user"></i>
+                <h3>Roommate Finder</h3>
+                <p>Find your perfect roommate using our comprehensive matching system that considers living habits and preferences.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-users"></i>
+                <h3>Study Groups</h3>
+                <p>Join or create study groups for your courses and connect with classmates who share your academic goals.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <h4>Connect With Us</h4>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

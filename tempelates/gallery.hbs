@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Gallery - CampusMatch</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="home.css">
+    <link rel="stylesheet" href="gallery.css">
+</head>
+<body>
+    <nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-logo">CampusMatch</a>
+        <div class="nav-menu">
+            <ul class="nav-list">
+                <li><a href="/main" class="nav-link"><i class='bx bx-home'></i> <span>Dashboard</span></a></li>
+                <li><a href="/gallery" class="nav-link"><i class='bx bx-images'></i> <span>Gallery</span></a></li>
+                <li><a href="/matches" class="nav-link"><i class='bx bx-heart'></i> <span>Matches</span></a></li>
+                <li><a href="/logout" class="nav-signup"><i class='bx bx-log-out'></i> <span>Logout</span></a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+    <div class="page-container">
+        <div class="page-header">
+            <h1>Your Photo Gallery</h1>
+            <p class="page-subtitle">Showcase your personality with photos that tell your story</p>
+        </div>
+        <!-- Toast Notifications -->
+        <div id="toast-container" class="toast-container"></div>
+
+        <div class="gallery-content">
+            <!-- Left Sidebar with Upload and Stats -->
+            <div class="gallery-sidebar">
+                <!-- BEGIN REPLACEMENT UPLOAD AREA -->
+                <div class="upload-card">
+                  <h2><span class="icon icon-upload"></span> Add New Photo</h2>
+                  
+                  <form id="uploadForm" action="/upload-gallery-photo" method="POST" enctype="multipart/form-data">
+                    <div class="simple-form-row">
+                      <input type="file" id="fileInput" name="galleryPhoto" accept="image/*" class="file-input-hidden">
+                      <label for="fileInput" class="simple-upload-btn">Choose File</label>
+                      <div class="file-status" id="fileStatus">No file selected</div>
+                    </div>
+                    
+                    <div class="simple-form-row">
+                      <label for="description">Description (optional)</label>
+                      <textarea id="description" name="description" placeholder="Tell us about this photo" rows="3" class="form-textarea"></textarea>
+                    </div>
+                    
+                    <div class="privacy-row">
+                      <label for="isPrivate">
+                        <span class="icon icon-shield"></span>
+                        Photo Privacy:
+                      </label>
+                      <input type="checkbox" id="isPrivate" name="isPrivate">
+                      <span id="privacyText">Public</span>
+                    </div>
+
+                    <button type="submit" id="uploadSubmitBtn" class="submit-button" disabled>
+                      <span class="icon icon-cloud-upload"></span> Upload Photo
+                    </button>
+                  </form>
+                </div>
+                <!-- END REPLACEMENT UPLOAD AREA -->
+                
+                <div class="gallery-stats">
+                    <h2><span class="icon icon-chart"></span> Gallery Stats</h2>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value">{{user.profile.galleryPhotos.length}}</div>
+                            <div class="stat-label">Total Photos</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-value" id="publicPhotoCount">0</div>
+                            <div class="stat-label">Public Photos</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-value" id="privatePhotoCount">0</div>
+                            <div class="stat-label">Private Photos</div>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-completion">
+                        <div class="completion-label">
+                            <span><span class="icon icon-check"></span> Gallery Completion</span>
+                            <span id="galleryCompletion">0%</span>
+                        </div>
+                        <div class="completion-bar">
+                            <div class="completion-progress" id="galleryProgress" style="width: 0%;"></div>
+                        </div>
+                        <p class="completion-hint">
+                            <span class="icon icon-bulb"></span>
+                            Adding at least 5 photos improves your match potential
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Gallery Grid -->
+            <div class="gallery-main">
+                <!-- Gallery Controls -->
+                <div class="gallery-controls">
+                    <div class="gallery-filters">
+                        <button class="filter-btn active" data-filter="all">
+                            <span class="icon icon-grid"></span>
+                            <span>All Photos</span>
+                        </button>
+                        <button class="filter-btn" data-filter="public">
+                            <span class="icon icon-globe"></span>
+                            <span>Public</span>
+                        </button>
+                        <button class="filter-btn" data-filter="private">
+                            <span class="icon icon-lock"></span>
+                            <span>Private</span>
+                        </button>
+                    </div>
+                    
+                    <div class="gallery-actions">
+                        <div class="search-bar">
+                            <input type="text" id="searchPhotos" placeholder="Search descriptions...">
+                            <span class="icon icon-search"></span>
+                        </div>
+                        
+                        <div class="sort-dropdown">
+                            <select id="sortOptions">
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Photos Grid Container -->
+                <div class="photos-container" id="photosGrid">
+                    {{#if user.profile.galleryPhotos.length}}
+                        {{#each user.profile.galleryPhotos}}
+                            <div class="gallery-item {{#if isPrivate}}private{{/if}}" data-id="{{this._id}}" data-description="{{this.description}}" data-date="{{this.uploadedAt}}">
+                                <div class="photo-container">
+                                    <img src="/gallery-photo/{{../user._id}}/{{this._id}}" 
+                                    alt="{{this.description}}"
+                                    loading="lazy"
+                                    onerror="this.onerror=null; this.src='/default-gallery-image.png'; this.classList.add('error-image');">nerror="this.onerror=null; this.src='/default-gallery-image.png'; this.classList.add('error-image');">
+                                    
+                                    {{#if isPrivate}}
+                                        <span class="private-badge"><span class="icon icon-lock"></span> Private</span>
+                                    {{/if}}
+                                    
+                                    <div class="photo-overlay">
+                                        <div class="photo-actions">
+                                            <button class="action-icon view-photo" title="View Photo">
+                                                <span class="icon icon-fullscreen"></span>
+                                            </button>
+                                            <button class="action-icon edit-photo" title="Edit Details">
+                                                <span class="icon icon-edit"></span>
+                                            </button>
+                                            <button class="action-icon toggle-privacy" title="{{#if isPrivate}}Make Public{{else}}Make Private{{/if}}">
+                                                <span class="icon {{#if isPrivate}}icon-lock-open{{else}}icon-lock{{/if}}"></span>
+                                            </button>
+                                            <button class="action-icon delete-photo" title="Delete Photo">
+                                                <span class="icon icon-trash"></span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="photo-details">
+                                    <p class="photo-description">{{this.description}}</p>
+                                    <p class="photo-date">Uploaded: {{formatDate this.uploadedAt}}</p>
+                                </div>
+                            </div>
+                        {{/each}}
+                    {{else}}
+                        <div class="empty-gallery">
+                            <div class="empty-illustration">
+                                <span class="icon icon-images" style="font-size: 3rem;"></span>
+                                <div class="empty-badge">
+                                    <span class="icon icon-plus"></span>
+                                </div>
+                            </div>
+                            <h3>Your gallery is empty</h3>
+                            <p>Upload your first photo to showcase your personality to potential matches</p>
+                            <button type="button" class="start-upload-btn" onclick="document.getElementById('fileInput').click()">
+                                <span class="icon icon-image-add"></span>
+                                Add Your First Photo
+                            </button>
+                        </div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Templates -->
+    <!-- View Photo Modal -->
+    <div id="photoModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div class="modal-header">
+                <h3><span class="icon icon-image"></span> Photo View</h3>
+            </div>
+            <div class="modal-body">
+                <img id="modalImage" src="" alt="Full size photo">
+                <div class="modal-details">
+                    <p id="modalDescription"></p>
+                    <p id="modalDate"></p>
+                    <span id="modalPrivacy"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Photo Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div class="modal-header">
+                <h3><span class="icon icon-edit"></span> Edit Photo Details</h3>
+            </div>
+            <div class="modal-body">
+                <form id="editPhotoForm">
+                    <input type="hidden" id="editPhotoId">
+                    <div class="form-group">
+                        <label for="editDescription">
+                            <span class="icon icon-text"></span> Description
+                        </label>
+                        <textarea id="editDescription" name="description" placeholder="Enter a description" rows="3"></textarea>
+                    </div>
+                    <!-- Edit Privacy Toggle -->
+                    <div class="form-group toggle-group">
+                        <label for="editIsPrivate">
+                            <span class="icon icon-shield"></span> Photo Privacy
+                        </label>
+                        <div class="toggle-container">
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="editIsPrivate" name="isPrivate">
+                                <label for="editIsPrivate" class="toggle-label"></label>
+                            </div>
+                            <div class="privacy-status">
+                                <span class="privacy-icon edit-public" id="editPublicIcon"><span class="icon icon-globe"></span></span>
+                                <span class="privacy-icon edit-private" id="editPrivateIcon"><span class="icon icon-lock"></span></span>
+                                <span id="editPrivacyText">Public</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="cancel-btn close-modal">
+                            <span class="icon icon-x"></span> Cancel
+                        </button>
+                        <button type="submit" class="save-btn">
+                            <span class="icon icon-check"></span> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><span class="icon icon-trash" style="color: #ef4444;"></span> Confirm Deletion</h3>
+            </div>
+            <div class="modal-body">
+                <div class="confirm-message">
+                    <span class="icon icon-warning-circle warning-icon"></span>
+                    <p>Are you sure you want to delete this photo? This action cannot be undone.</p>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="cancel-btn close-modal">
+                        <span class="icon icon-x"></span> Cancel
+                    </button>
+                    <button type="button" id="confirmDelete" class="delete-btn">
+                        <span class="icon icon-trash"></span> Delete Photo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer with improved styling -->
+    <footer class="footer">
+    <div class="footer-container">
+        <div class="footer-content">
+            <div class="footer-logo">
+                <a href="/">CampusMatch</a>
+                <p>Connect with your campus community.</p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-section">
+                    <h4>Navigation</h4>
+                    <ul>
+                        <li><a href="/main">Dashboard</a></li>
+                        <li><a href="/gallery">Gallery</a></li>
+                        <li><a href="/matches">Matches</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="/help">Help Center</a></li>
+                        <li><a href="/contact">Contact Us</a></li>
+                        <li><a href="/privacy">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Connect</h4>
+                    <div class="social-links">
+                        <a href="#"><i class='bx bxl-instagram'></i></a>
+                        <a href="#"><i class='bx bxl-twitter'></i></a>
+                        <a href="#"><i class='bx bxl-facebook'></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024 CampusMatch. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+    <!-- CONSOLIDATED JAVASCRIPT - Single script to avoid duplication -->
+    <script src="/js/common.js"></script>
+    <script>
+    // Wait for DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Gallery initialization starting...");
+        
+        // ========== FILE UPLOAD FUNCTIONALITY ==========
+        const fileInput = document.getElementById('fileInput');
+        const fileStatus = document.getElementById('fileStatus');
+        const uploadForm = document.getElementById('uploadForm');
+        const uploadSubmitBtn = document.getElementById('uploadSubmitBtn');
+        const isPrivateCheckbox = document.getElementById('isPrivate');
+        const privacyText = document.getElementById('privacyText');
+        
+        // File input change handler
+        if (fileInput) {
+          fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+              const file = this.files[0];
+              
+              // Validate file type
+              if (!file.type.match('image.*')) {
+                alert("Please select an image file");
+                this.value = '';
+                fileStatus.textContent = "No file selected";
+                uploadSubmitBtn.disabled = true;
+                return;
+              }
+              
+              // Validate file size
+              if (file.size > 5 * 1024 * 1024) {
+                alert("File is too large (max 5MB)");
+                this.value = '';
+                fileStatus.textContent = "No file selected";
+                uploadSubmitBtn.disabled = true;
+                return;
+              }
+              
+              // Format file size
+              const size = file.size;
+              const formattedSize = size < 1024 * 1024 
+                ? `${(size / 1024).toFixed(1)} KB` 
+                : `${(size / (1024 * 1024)).toFixed(1)} MB`;
+              
+              // Update file info
+              fileStatus.textContent = `Selected: ${file.name} (${formattedSize})`;
+              uploadSubmitBtn.disabled = false;
+            } else {
+              fileStatus.textContent = "No file selected";
+              uploadSubmitBtn.disabled = true;
+            }
+          });
+        }
+        
+        // Privacy toggle
+        if (isPrivateCheckbox) {
+          isPrivateCheckbox.addEventListener('change', function() {
+            privacyText.textContent = this.checked ? "Private" : "Public";
+          });
+        }
+        
+        // Direct form submission
+        if (uploadForm) {
+            uploadForm.addEventListener('submit', function(e) {
+                e.preventDefault(); // Stop normal form submission
+                
+                if (!fileInput || !fileInput.files.length) {
+                    alert('Please select a file first');
+                    return;
+                }
+                
+                // Show loading state
+                if (uploadSubmitBtn) {
+                    uploadSubmitBtn.disabled = true;
+                    uploadSubmitBtn.innerHTML = '<span class="icon icon-loader"></span> Uploading...';
+                }
+                
+                // Create FormData to send files
+                const formData = new FormData();
+                formData.append('galleryPhoto', fileInput.files[0]);
+                
+                // Add description
+                const description = document.getElementById('description');
+                if (description) {
+                    formData.append('description', description.value);
+                }
+                
+                // Add privacy setting
+                if (isPrivateCheckbox && isPrivateCheckbox.checked) {
+                    formData.append('isPrivate', 'on');
+                }
+                
+                // Log what we're submitting
+                console.log("Uploading file:", fileInput.files[0].name);
+                
+                // Send via fetch API
+                fetch('/upload-gallery-photo', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    console.log("Upload response status:", response.status);
+                    
+                    // If we got redirected, follow the redirect
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                        return null;
+                    }
+                    
+                    // Try to get JSON response
+                    try {
+                        return response.json();
+                    } catch (e) {
+                        console.error("Error parsing response:", e);
+                        return null;
+                    }
+                })
+                .then(data => {
+                    // Reset button state if we have data (meaning no redirect happened)
+                    if (data) {
+                        if (uploadSubmitBtn) {
+                            uploadSubmitBtn.disabled = false;
+                            uploadSubmitBtn.innerHTML = '<span class="icon icon-cloud-upload"></span> Upload Photo';
+                        }
+                        
+                        if (!data.success) {
+                            showToast('Upload failed: ' + (data.message || 'Unknown error'), 'error');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Upload error - check console for details', 'error');
+                    
+                    // Reset button state
+                    if (uploadSubmitBtn) {
+                        uploadSubmitBtn.disabled = false;
+                        uploadSubmitBtn.innerHTML = '<span class="icon icon-cloud-upload"></span> Upload Photo';
+                    }
+                });
+            });
+        }
+        
+        // ========== GALLERY INTERACTIONS ==========
+        const photosGrid = document.getElementById('photosGrid');
+        const photoModal = document.getElementById('photoModal');
+        const editModal = document.getElementById('editModal');
+        const confirmModal = document.getElementById('confirmModal');
+        const modalImage = document.getElementById('modalImage');
+        const modalDescription = document.getElementById('modalDescription');
+        const modalDate = document.getElementById('modalDate');
+        const modalPrivacy = document.getElementById('modalPrivacy');
+        const editPhotoForm = document.getElementById('editPhotoForm');
+        const editPhotoId = document.getElementById('editPhotoId');
+        const editDescription = document.getElementById('editDescription');
+        const editIsPrivate = document.getElementById('editIsPrivate');
+        const editPrivacyText = document.getElementById('editPrivacyText');
+        const editPublicIcon = document.getElementById('editPublicIcon');
+        const editPrivateIcon = document.getElementById('editPrivateIcon');
+        const confirmDelete = document.getElementById('confirmDelete');
+        let photoToDelete = null;
+        
+        // Photo action event delegation
+        if (photosGrid) {
+            photosGrid.addEventListener('click', function(e) {
+                // View Photo
+                const viewBtn = e.target.closest('.view-photo');
+                if (viewBtn && photoModal) {
+                    const item = viewBtn.closest('.gallery-item');
+                    if (!item) return;
+                    
+                    const img = item.querySelector('img');
+                    const description = item.querySelector('.photo-description')?.textContent || '';
+                    const date = item.querySelector('.photo-date')?.textContent || '';
+                    const isPrivate = item.classList.contains('private');
+                    
+                    if (modalImage) {
+                        modalImage.src = img.src;
+                        modalImage.alt = description || 'Gallery photo';
+                    }
+                    
+                    if (modalDescription) modalDescription.textContent = description || 'No description';
+                    if (modalDate) modalDate.textContent = date;
+                    if (modalPrivacy) {
+                        modalPrivacy.textContent = isPrivate ? 'Private Photo' : 'Public Photo';
+                        modalPrivacy.className = isPrivate ? 'privacy-tag private' : 'privacy-tag public';
+                    }
+                    
+                    photoModal.style.display = 'block';
+                    document.body.style.overflow = 'hidden';
+                    return;
+                }
+                
+                // Edit Photo
+                const editBtn = e.target.closest('.edit-photo');
+                if (editBtn && editModal) {
+                    const item = editBtn.closest('.gallery-item');
+                    if (!item) return;
+                    
+                    const photoId = item.dataset.id;
+                    const description = item.querySelector('.photo-description')?.textContent || '';
+                    const isPrivate = item.classList.contains('private');
+                    
+                    if (editPhotoId) editPhotoId.value = photoId;
+                    if (editDescription) editDescription.value = description;
+                    if (editIsPrivate) {
+                        editIsPrivate.checked = isPrivate;
+                        
+                        if (editPrivacyText) {
+                            editPrivacyText.textContent = isPrivate ? 'Private' : 'Public';
+                        }
+                        
+                        if (editPublicIcon && editPrivateIcon) {
+                            editPublicIcon.style.display = isPrivate ? 'none' : 'inline-block';
+                            editPrivateIcon.style.display = isPrivate ? 'inline-block' : 'none';
+                        }
+                    }
+                    
+                    editModal.style.display = 'block';
+                    document.body.style.overflow = 'hidden';
+                    
+                    if (editDescription) {
+                        setTimeout(() => { editDescription.focus(); }, 100);
+                    }
+                    return;
+                }
+                
+                // Toggle Privacy
+                const toggleBtn = e.target.closest('.toggle-privacy');
+                if (toggleBtn) {
+                    const item = toggleBtn.closest('.gallery-item');
+                    if (!item) return;
+                    
+                    const photoId = item.dataset.id;
+                    const isCurrentlyPrivate = item.classList.contains('private');
+                    
+                    // Add loading state
+                    const originalBtnHTML = toggleBtn.innerHTML;
+                    toggleBtn.innerHTML = '<span class="icon icon-loader"></span>';
+                    toggleBtn.disabled = true;
+                    
+                    // Send AJAX request
+                    fetch(`/toggle-privacy/${photoId}`, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Toggle class
+                            item.classList.toggle('private');
+                            
+                            // Update privacy badge
+                            const badge = item.querySelector('.private-badge');
+                            if (isCurrentlyPrivate) {
+                                if (badge) badge.remove();
+                                toggleBtn.innerHTML = '<span class="icon icon-lock"></span>';
+                                toggleBtn.title = 'Make Private';
+                            } else {
+                                if (!badge && item.querySelector('.photo-container')) {
+                                    const newBadge = document.createElement('span');
+                                    newBadge.className = 'private-badge';
+                                    newBadge.innerHTML = '<span class="icon icon-lock"></span> Private';
+                                    item.querySelector('.photo-container').appendChild(newBadge);
+                                }
+                                toggleBtn.innerHTML = '<span class="icon icon-lock-open"></span>';
+                                toggleBtn.title = 'Make Public';
+                            }
+                            
+                            toggleBtn.disabled = false;
+                            showToast(isCurrentlyPrivate ? 'Photo is now public' : 'Photo is now private', 'success');
+                            
+                            // Update stats
+                            updateGalleryStats();
+                        } else {
+                            toggleBtn.innerHTML = originalBtnHTML;
+                            toggleBtn.disabled = false;
+                            showToast(data.error || 'Failed to update privacy setting', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        toggleBtn.innerHTML = originalBtnHTML;
+                        toggleBtn.disabled = false;
+                        showToast('Error updating privacy', 'error');
+                    });
+                    return;
+                }
+                
+                // Delete Photo
+                const deleteBtn = e.target.closest('.delete-photo');
+                if (deleteBtn && confirmModal) {
+                    const item = deleteBtn.closest('.gallery-item');
+                    if (!item) return;
+                    
+                    // Store the photo ID
+                    photoToDelete = item.dataset.id;
+                    console.log("Photo to delete:", photoToDelete);
+                    
+                    // Set the ID directly on the confirm button
+                    if (confirmDelete) confirmDelete.dataset.photoId = photoToDelete;
+                    
+                    // Show confirmation modal
+                    confirmModal.style.display = 'block';
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+        }
+        
+        // Edit photo form submission
+        if (editPhotoForm) {
+            editPhotoForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                if (!editPhotoId || !editDescription) {
+                    showToast('Form elements are missing', 'error');
+                    return;
+                }
+                
+                const photoId = editPhotoId.value;
+                const description = editDescription.value;
+                const isPrivate = editIsPrivate.checked;
+                
+                if (!photoId) {
+                    showToast('No photo selected', 'error');
+                    return;
+                }
+                
+                // Show loading
+                const saveBtn = this.querySelector('.save-btn');
+                if (saveBtn) {
+                    saveBtn.innerHTML = '<span class="icon icon-loader"></span> Saving...';
+                    saveBtn.disabled = true;
+                }
+                
+                // Send update request
+                fetch(`/update-gallery-photo/${photoId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        description: description,
+                        isPrivate: isPrivate
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update UI
+                        const item = document.querySelector(`.gallery-item[data-id="${photoId}"]`);
+                        if (item) {
+                            const descriptionEl = item.querySelector('.photo-description');
+                            if (descriptionEl) {
+                                descriptionEl.textContent = description;
+                            }
+                            
+                            // Update privacy
+                            const wasPrivate = item.classList.contains('private');
+                            const badge = item.querySelector('.private-badge');
+                            const toggleBtn = item.querySelector('.toggle-privacy');
+                            
+                            if (isPrivate && !wasPrivate) {
+                                item.classList.add('private');
+                                
+                                if (!badge && item.querySelector('.photo-container')) {
+                                    const newBadge = document.createElement('span');
+                                    newBadge.className = 'private-badge';
+                                    newBadge.innerHTML = '<span class="icon icon-lock"></span> Private';
+                                    item.querySelector('.photo-container').appendChild(newBadge);
+                                }
+                                
+                                if (toggleBtn) {
+                                    toggleBtn.innerHTML = '<span class="icon icon-lock-open"></span>';
+                                    toggleBtn.title = 'Make Public';
+                                }
+                            } else if (!isPrivate && wasPrivate) {
+                                item.classList.remove('private');
+                                
+                                if (badge) badge.remove();
+                                
+                                if (toggleBtn) {
+                                    toggleBtn.innerHTML = '<span class="icon icon-lock"></span>';
+                                    toggleBtn.title = 'Make Private';
+                                }
+                            }
+                        }
+                        
+                        // Close modal
+                        if (editModal) {
+                            editModal.style.display = 'none';
+                            document.body.style.overflow = '';
+                        }
+                        
+                        showToast('Photo updated successfully', 'success');
+                        
+                        // Update stats
+                        updateGalleryStats();
+                    } else {
+                        if (saveBtn) {
+                            saveBtn.innerHTML = '<span class="icon icon-check"></span> Save Changes';
+                            saveBtn.disabled = false;
+                        }
+                        showToast(data.error || 'Failed to update photo', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    if (saveBtn) {
+                        saveBtn.innerHTML = '<span class="icon icon-check"></span> Save Changes';
+                        saveBtn.disabled = false;
+                    }
+                    showToast('Error updating photo', 'error');
+                });
+            });
+            
+            // Edit privacy toggle
+            if (editIsPrivate) {
+                editIsPrivate.addEventListener('change', function() {
+                    if (editPrivacyText) {
+                        editPrivacyText.textContent = this.checked ? 'Private' : 'Public';
+                    }
+                    
+                    if (editPublicIcon && editPrivateIcon) {
+                        editPublicIcon.style.display = this.checked ? 'none' : 'inline-block';
+                        editPrivateIcon.style.display = this.checked ? 'inline-block' : 'none';
+                    }
+                });
+            }
+        }
+        
+        // Confirm Delete Button
+        if (confirmDelete) {
+            confirmDelete.addEventListener('click', function() {
+                // Get the photo ID from the data attribute
+                const photoId = this.dataset.photoId || photoToDelete;
+                
+                if (!photoId) {
+                    showToast('No photo selected for deletion', 'error');
+                    return;
+                }
+                
+                console.log("Attempting to delete photo:", photoId);
+                
+                // Show loading state
+                this.innerHTML = '<span class="icon icon-loader"></span> Deleting...';
+                this.disabled = true;
+                
+                // Send delete request
+                fetch(`/delete-gallery-photo/${photoId}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Delete response:", data);
+                    
+                    if (data.success) {
+                        // Find and remove the item from DOM
+                        const itemToDelete = document.querySelector(`.gallery-item[data-id="${photoId}"]`);
+                        if (itemToDelete) {
+                            itemToDelete.remove();
+                            
+                            // Check if gallery is now empty
+                            if (document.querySelectorAll('.gallery-item').length === 0) {
+                                // Show empty gallery state
+                                photosGrid.innerHTML = `
+                                <div class="empty-gallery">
+                                    <div class="empty-illustration">
+                                    <span class="icon icon-images" style="font-size: 3rem;"></span>
+                                    <div class="empty-badge"><span class="icon icon-plus"></span></div>
+                                    </div>
+                                    <h3>Your gallery is empty</h3>
+                                    <p>Upload your first photo to showcase your personality to potential matches</p>
+                                    <button type="button" class="start-upload-btn" onclick="document.getElementById('fileInput').click()">
+                                    <span class="icon icon-image-add"></span> Add Your First Photo
+                                    </button>
+                                </div>
+                                `;
+                            }
+                        }
+                        
+                        // Close modal
+                        confirmModal.style.display = 'none';
+                        document.body.style.overflow = '';
+                        
+                        // Show success message
+                        showToast('Photo deleted successfully', 'success');
+                        
+                        // Update stats
+                        updateGalleryStats();
+                    } else {
+                        // Reset button
+                        this.innerHTML = '<span class="icon icon-trash"></span> Delete Photo';
+                        this.disabled = false;
+                        
+                        // Show error message
+                        showToast(data.error || 'Failed to delete photo', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    
+                    // Reset button
+                    this.innerHTML = '<span class="icon icon-trash"></span> Delete Photo';
+                    this.disabled = false;
+                    
+                    // Close modal
+                    confirmModal.style.display = 'none';
+                    document.body.style.overflow = '';
+                    
+                    // Show error message
+                    showToast('Error deleting photo', 'error');
+                });
+            });
+        }
+        
+        // Close modal buttons
+        document.querySelectorAll('.close-modal, .cancel-btn').forEach(closeBtn => {
+            closeBtn.addEventListener('click', function() {
+                const modal = this.closest('.modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+        
+        // Close on background click
+        window.addEventListener('click', function(e) {
+            document.querySelectorAll('.modal').forEach(modal => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+        
+        // ESC Key for modal closing
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.style.display = 'none';
+                });
+                document.body.style.overflow = '';
+            }
+        });
+        
+        // ========== GALLERY FILTERING & SORTING ==========
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const searchInput = document.getElementById('searchPhotos');
+        const sortOptions = document.getElementById('sortOptions');
+        
+        // Filter functionality
+        if (filterButtons.length > 0) {
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Update active state
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Get filter value
+                    const filter = this.dataset.filter;
+                    const items = document.querySelectorAll('.gallery-item');
+                    
+                    // Apply filter
+                    items.forEach(item => {
+                        if (filter === 'all') {
+                            item.style.display = '';
+                        } else if (filter === 'public' && !item.classList.contains('private')) {
+                            item.style.display = '';
+                        } else if (filter === 'private' && item.classList.contains('private')) {
+                            item.style.display = '';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        }
+        
+        // Search functionality
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                const items = document.querySelectorAll('.gallery-item');
+                
+                items.forEach(item => {
+                    const description = item.dataset.description?.toLowerCase() || '';
+                    const descriptionEl = item.querySelector('.photo-description');
+                    const descriptionText = descriptionEl?.textContent?.toLowerCase() || '';
+                    
+                    if (searchTerm === '' || description.includes(searchTerm) || descriptionText.includes(searchTerm)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+            
+            // Clear search button
+            const searchWrapper = searchInput.parentElement;
+            if (searchWrapper) {
+                const clearBtn = document.createElement('button');
+                clearBtn.type = 'button';
+                clearBtn.className = 'search-clear';
+                clearBtn.innerHTML = '<span class="icon icon-x"></span>';
+                clearBtn.style.display = 'none';
+                clearBtn.style.position = 'absolute';
+                clearBtn.style.right = '30px';
+                clearBtn.style.top = '50%';
+                clearBtn.style.transform = 'translateY(-50%)';
+                clearBtn.style.background = 'none';
+                clearBtn.style.border = 'none';
+                clearBtn.style.cursor = 'pointer';
+                searchWrapper.appendChild(clearBtn);
+                
+                // Show/hide clear button
+                searchInput.addEventListener('input', function() {
+                    clearBtn.style.display = this.value ? 'block' : 'none';
+                });
+                
+                // Clear search
+                clearBtn.addEventListener('click', function() {
+                    searchInput.value = '';
+                    searchInput.dispatchEvent(new Event('input'));
+                    this.style.display = 'none';
+                });
+            }
+        }
+        
+        // Sort functionality
+        if (sortOptions) {
+            sortOptions.addEventListener('change', function() {
+                const sortValue = this.value;
+                const items = Array.from(document.querySelectorAll('.gallery-item'));
+                
+                if (items.length === 0) return;
+                
+                // Sort items
+                items.sort((a, b) => {
+                    const dateA = new Date(a.dataset.date);
+                    const dateB = new Date(b.dataset.date);
+                    
+                    if (sortValue === 'newest') {
+                        return dateB - dateA;
+                    } else {
+                        return dateA - dateB;
+                    }
+                });
+                
+                // Reappend in sorted order
+                const photosContainer = document.getElementById('photosGrid');
+                if (photosContainer) {
+                    items.forEach(item => {
+                        photosContainer.appendChild(item);
+                    });
+                }
+            });
+        }
+        
+        // ========== GALLERY STATS ==========
+        function updateGalleryStats() {
+            const publicCount = document.getElementById('publicPhotoCount');
+            const privateCount = document.getElementById('privatePhotoCount');
+            const completionText = document.getElementById('galleryCompletion');
+            const completionBar = document.getElementById('galleryProgress');
+            
+            // Count photos
+            const totalItems = document.querySelectorAll('.gallery-item').length;
+            const privateItems = document.querySelectorAll('.gallery-item.private').length;
+            const publicItems = totalItems - privateItems;
+            
+            // Update counters
+            if (publicCount) publicCount.textContent = publicItems;
+            if (privateCount) privateCount.textContent = privateItems;
+            
+            // Calculate completion percentage (assuming 5 photos is 100%)
+            const completionPercentage = Math.min(Math.round((totalItems / 5) * 100), 100);
+            if (completionText) completionText.textContent = `${completionPercentage}%`;
+            if (completionBar) completionBar.style.width = `${completionPercentage}%`;
+        }
+        
+        // Initialize stats
+        updateGalleryStats();
+        
+        // ========== TOAST NOTIFICATIONS ==========
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) return;
+            
+            // Remove existing toasts of same type
+            document.querySelectorAll(`.toast.toast-${type}`).forEach(toast => {
+                toast.classList.add('toast-hide');
+                setTimeout(() => toast.remove(), 300);
+            });
+            
+            // Create toast
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            // Choose icon based on type
+            let icon = '';
+            switch(type) {
+                case 'success': icon = '✅'; break;
+                case 'error': icon = '❌'; break;
+                default: icon = 'ℹ️';
+            }
+            
+            toast.innerHTML = `
+                <span style="font-size: 1.25rem; margin-right: 0.75rem;">${icon}</span>
+                <span style="flex: 1;">${message}</span>
+                <button class="toast-close" style="background: none; border: none; color: inherit; cursor: pointer;">
+                    <span style="font-size: 1rem;">×</span>
+                </button>
+            `;
+            
+            // Add close functionality
+            const closeBtn = toast.querySelector('.toast-close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    toast.classList.add('toast-hide');
+                    setTimeout(() => toast.remove(), 300);
+                });
+            }
+            
+            toastContainer.appendChild(toast);
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.classList.add('toast-hide');
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 5000);
+        }
+        
+        // Make showToast function globally available
+        window.showToast = showToast;
+        
+        // ========== MISC UI ENHANCEMENTS ==========
+        
+        // Fix for modal image display and zoom
+        const modalImg = document.getElementById('modalImage');
+        if (modalImg) {
+            let isZoomed = false;
+            
+            modalImg.addEventListener('click', function() {
+                isZoomed = !isZoomed;
+                if (isZoomed) {
+                    this.style.transform = 'scale(1.75)';
+                    this.style.cursor = 'zoom-out';
+                } else {
+                    this.style.transform = 'scale(1)';
+                    this.style.cursor = 'zoom-in';
+                }
+            });
+            
+            modalImg.addEventListener('error', function() {
+                this.src = '/default-gallery-image.png';
+                this.classList.add('error-image');
+            });
+        }
+        
+        // Fix mobile touch interactions
+        if ('ontouchstart' in window) {
+            document.querySelectorAll('.gallery-item').forEach(item => {
+                item.addEventListener('touchstart', function(e) {
+                    const overlay = this.querySelector('.photo-overlay');
+                    if (overlay && !overlay.contains(e.target)) {
+                        overlay.style.opacity = '1';
+                        setTimeout(() => {
+                            overlay.style.opacity = '';
+                        }, 2000);
+                    }
+                });
+            });
+        }
+        
+        // Add initial animation to gallery items
+        document.querySelectorAll('.gallery-item').forEach((item, index) => {
+            item.classList.add('item-fade-in');
+            item.style.animationDelay = `${index * 0.05}s`;
+        });
+    });
+    </script>
+</body>
+</html>

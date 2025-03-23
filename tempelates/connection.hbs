@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Connections - CampusMatch</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="connections.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">CampusMatch</a>
+            <div class="nav-menu">
+                <ul class="nav-list">
+                    <li><a href="/main"><i class='bx bx-home'></i> Dashboard</a></li>
+                    <li><a href="/gallery"><i class='bx bx-images'></i> Gallery</a></li>
+                    <li><a href="/matches"><i class='bx bx-heart'></i> Matches</a></li>
+                    <li><a href="/connections" class="active"><i class='bx bx-user-check'></i> Connections</a></li>
+                    <li><a href="/logout" class="nav-signup"><i class='bx bx-log-out'></i> Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    {{#if success}}
+    <div class="success-toast" id="successToast">
+        {{#if_eq success 'request_accepted'}}
+            <i class='bx bx-check-circle'></i> Connection request accepted!
+        {{else if_eq success 'request_rejected'}}
+            <i class='bx bx-check-circle'></i> Connection request rejected.
+        {{else}}
+            <i class='bx bx-check-circle'></i> Action completed successfully!
+        {{/if_eq}}
+        <button class="close-toast" type="button"><i class='bx bx-x'></i></button>
+    </div>
+    {{/if}}
+
+    {{#if error}}
+    <div class="error-toast" id="errorToast">
+        <i class='bx bx-error-circle'></i> {{error}}
+        <button class="close-toast" type="button"><i class='bx bx-x'></i></button>
+    </div>
+    {{/if}}
+
+    <div class="connections-container">
+        <div class="connections-header">
+            <h1>Your Connections</h1>
+            <p>Manage your campus connections and messages</p>
+        </div>
+
+        <div class="connections-tabs">
+            <button class="tab-btn active" data-tab="pending">
+                <i class='bx bx-time'></i> Pending Requests 
+                {{#if pendingRequests.length}}
+                <span class="badge">{{pendingRequests.length}}</span>
+                {{/if}}
+            </button>
+            <button class="tab-btn" data-tab="accepted">
+                <i class='bx bx-user-check'></i> Connected 
+                {{#if acceptedConnections.length}}
+                <span class="badge">{{acceptedConnections.length}}</span>
+                {{/if}}
+            </button>
+            <button class="tab-btn" data-tab="sent">
+                <i class='bx bx-send'></i> Sent Requests 
+                {{#if connectionRequests.length}}
+                <span class="badge">{{connectionRequests.length}}</span>
+                {{/if}}
+            </button>
+        </div>
+
+        <div class="tab-content" id="pending-tab">
+            {{#if pendingRequests.length}}
+                <div class="connections-grid">
+                    {{#each pendingRequests}}
+                        <div class="connection-card">
+                            <div class="connection-avatar">
+                                {{#if this.user.profile.photo}}
+                                    <img src="/photo/{{this.user._id}}" alt="{{this.user.profile.firstName}}">
+                                {{else}}
+                                    <img src="/default-avatar.png" alt="Default Avatar">
+                                {{/if}}
+                            </div>
+                            <div class="connection-info">
+                                <h3>{{this.user.profile.firstName}} {{this.user.profile.lastName}}</h3>
+                                <p>{{this.user.profile.university}}</p>
+                                <p class="connection-detail">{{this.user.profile.major}}, Year {{this.user.profile.yearOfStudy}}</p>
+                                <p class="connection-time">
+                                    <i class='bx bx-time'></i> Requested {{formatTimeAgo this.connectionData.requestedAt}}
+                                </p>
+                            </div>
+                            <div class="connection-actions">
+                                <form action="/accept-connection/{{this.user._id}}" method="POST" class="connection-form accept-form">
+                                    <button type="submit" class="action-btn accept-btn">
+                                        <i class='bx bx-check'></i> Accept
+                                    </button>
+                                </form>
+                                <form action="/reject-connection/{{this.user._id}}" method="POST" class="connection-form reject-form">
+                                    <button type="submit" class="action-btn reject-btn">
+                                        <i class='bx bx-x'></i> Decline
+                                    </button>
+                                </form>
+                                <a href="/view-profile/{{this.user._id}}" class="action-btn view-btn">
+                                    <i class='bx bx-user'></i> View Profile
+                                </a>
+                            </div>
+                        </div>
+                    {{/each}}
+                </div>
+            {{else}}
+                <div class="empty-state">
+                    <i class='bx bx-time-five'></i>
+                    <p>You don't have any pending connection requests.</p>
+                </div>
+            {{/if}}
+        </div>
+
+        <div class="tab-content" id="accepted-tab" style="display: none;">
+            {{#if acceptedConnections.length}}
+                <div class="connections-grid">
+                    {{#each acceptedConnections}}
+                        <div class="connection-card">
+                            <div class="connection-avatar">
+                                {{#if this.user.profile.photo}}
+                                    <img src="/photo/{{this.user._id}}" alt="{{this.user.profile.firstName}}">
+                                {{else}}
+                                    <img src="/default-avatar.png" alt="Default Avatar">
+                                {{/if}}
+                            </div>
+                            <div class="connection-info">
+                                <h3>{{this.user.profile.firstName}} {{this.user.profile.lastName}}</h3>
+                                <p>{{this.user.profile.university}}</p>
+                                <p class="connection-detail">{{this.user.profile.major}}, Year {{this.user.profile.yearOfStudy}}</p>
+                                <p class="connection-time">
+                                    <i class='bx bx-check-circle'></i> Connected {{formatTimeAgo this.connectionData.updatedAt}}
+                                </p>
+                            </div>
+                            <div class="connection-actions">
+                                <a href="/chat/{{this.user._id}}" class="action-btn message-btn">
+                                    <i class='bx bx-message-square-detail'></i> Message
+                                </a>
+                                <a href="/view-profile/{{this.user._id}}" class="action-btn view-btn">
+                                    <i class='bx bx-user'></i> View Profile
+                                </a>
+                            </div>
+                        </div>
+                    {{/each}}
+                </div>
+            {{else}}
+                <div class="empty-state">
+                    <i class='bx bx-user-check'></i>
+                    <p>You don't have any active connections yet.</p>
+                    <a href="/matches" class="empty-action-btn">Find Matches</a>
+                </div>
+            {{/if}}
+        </div>
+
+        <div class="tab-content" id="sent-tab" style="display: none;">
+            {{#if connectionRequests.length}}
+                <div class="connections-grid">
+                    {{#each connectionRequests}}
+                        <div class="connection-card">
+                            <div class="connection-avatar">
+                                {{#if this.user.profile.photo}}
+                                    <img src="/photo/{{this.user._id}}" alt="{{this.user.profile.firstName}}">
+                                {{else}}
+                                    <img src="/default-avatar.png" alt="Default Avatar">
+                                {{/if}}
+                            </div>
+                            <div class="connection-info">
+                                <h3>{{this.user.profile.firstName}} {{this.user.profile.lastName}}</h3>
+                                <p>{{this.user.profile.university}}</p>
+                                <p class="connection-detail">{{this.user.profile.major}}, Year {{this.user.profile.yearOfStudy}}</p>
+                                <p class="connection-time">
+                                    <i class='bx bx-send'></i> Sent {{formatTimeAgo this.connectionData.requestedAt}}
+                                </p>
+                            </div>
+                            <div class="connection-actions">
+                                <a href="/view-profile/{{this.user._id}}" class="action-btn view-btn">
+                                    <i class='bx bx-user'></i> View Profile
+                                </a>
+                            </div>
+                        </div>
+                    {{/each}}
+                </div>
+            {{else}}
+                <div class="empty-state">
+                    <i class='bx bx-send'></i>
+                    <p>You haven't sent any connection requests yet.</p>
+                    <a href="/matches" class="empty-action-btn">Find Matches</a>
+                </div>
+            {{/if}}
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <a href="/">CampusMatch</a>
+                    <p>Connect with your campus community.</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-section">
+                        <h4>Navigation</h4>
+                        <ul>
+                            <li><a href="/main">Dashboard</a></li>
+                            <li><a href="/gallery">Gallery</a></li>
+                            <li><a href="/matches">Matches</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Support</h4>
+                        <ul>
+                            <li><a href="/help">Help Center</a></li>
+                            <li><a href="/contact">Contact Us</a></li>
+                            <li><a href="/privacy">Privacy Policy</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Connect</h4>
+                        <div class="social-links">
+                            <a href="#"><i class='bx bxl-instagram'></i></a>
+                            <a href="#"><i class='bx bxl-twitter'></i></a>
+                            <a href="#"><i class='bx bxl-facebook'></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2024 CampusMatch. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Tab switching
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    // Hide all tab contents
+                    tabContents.forEach(content => content.style.display = 'none');
+                    
+                    // Show selected tab content
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).style.display = 'block';
+                });
+            });
+            
+            // Handle toasts
+            const successToast = document.getElementById('successToast');
+            const errorToast = document.getElementById('errorToast');
+            
+            if (successToast) {
+                // Show toast
+                setTimeout(() => {
+                    successToast.classList.add('show');
+                }, 300);
+                
+                // Auto hide after 5 seconds
+                setTimeout(() => {
+                    successToast.classList.remove('show');
+                    setTimeout(() => {
+                        successToast.style.display = 'none';
+                    }, 300);
+                }, 5000);
+                
+                // Close button
+                const closeBtn = successToast.querySelector('.close-toast');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function() {
+                        successToast.classList.remove('show');
+                        setTimeout(() => {
+                            successToast.style.display = 'none';
+                        }, 300);
+                    });
+                }
+            }
+            
+            if (errorToast) {
+                // Same for error toast
+                setTimeout(() => {
+                    errorToast.classList.add('show');
+                }, 300);
+                
+                setTimeout(() => {
+                    errorToast.classList.remove('show');
+                    setTimeout(() => {
+                        errorToast.style.display = 'none';
+                    }, 300);
+                }, 5000);
+                
+                const closeBtn = errorToast.querySelector('.close-toast');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function() {
+                        errorToast.classList.remove('show');
+                        setTimeout(() => {
+                            errorToast.style.display = 'none';
+                        }, 300);
+                    });
+                }
+            }
+            
+            // Handle connection forms
+            const connectionForms = document.querySelectorAll('.connection-form');
+            connectionForms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Show loading state
+                    const button = this.querySelector('button');
+                    const originalContent = button.innerHTML;
+                    button.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processing...';
+                    button.disabled = true;
+                    
+                    // Send AJAX request
+                    fetch(this.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Remove the card
+                            const card = this.closest('.connection-card');
+                            card.style.opacity = 0;
+                            setTimeout(() => {
+                                card.remove();
+                                
+                                // Check if no more cards
+                                const container = document.querySelector('.connections-grid');
+                                if (container && container.children.length === 0) {
+                                    const tabId = document.querySelector('.tab-btn.active').getAttribute('data-tab');
+                                    const emptyState = document.createElement('div');
+                                    emptyState.className = 'empty-state';
+                                    
+                                    if (tabId === 'pending') {
+                                        emptyState.innerHTML = `
+                                            <i class='bx bx-time-five'></i>
+                                            <p>You don't have any pending connection requests.</p>
+                                        `;
+                                    } else if (tabId === 'sent') {
+                                        emptyState.innerHTML = `
+                                            <i class='bx bx-send'></i>
+                                            <p>You haven't sent any connection requests yet.</p>
+                                            <a href="/matches" class="empty-action-btn">Find Matches</a>
+                                        `;
+                                    }
+                                    
+                                    document.getElementById(`${tabId}-tab`).innerHTML = '';
+                                    document.getElementById(`${tabId}-tab`).appendChild(emptyState);
+                                }
+                            }, 300);
+                            
+                            // Update badge count
+                            const activeTab = document.querySelector('.tab-btn.active');
+                            const tabId = activeTab.getAttribute('data-tab');
+                            const badge = activeTab.querySelector('.badge');
+                            
+                            if (badge) {
+                                const count = parseInt(badge.textContent) - 1;
+                                if (count <= 0) {
+                                    badge.remove();
+                                } else {
+                                    badge.textContent = count;
+                                }
+                            }
+                            
+                            // Check if we need to update the accepted tab badge
+                            if (this.classList.contains('accept-form')) {
+                                const acceptedTab = document.querySelector('.tab-btn[data-tab="accepted"]');
+                                let acceptedBadge = acceptedTab.querySelector('.badge');
+                                
+                                if (acceptedBadge) {
+                                    acceptedBadge.textContent = parseInt(acceptedBadge.textContent) + 1;
+                                } else {
+                                    acceptedBadge = document.createElement('span');
+                                    acceptedBadge.className = 'badge';
+                                    acceptedBadge.textContent = '1';
+                                    acceptedTab.appendChild(acceptedBadge);
+                                }
+                            }
+                            
+                            // Show success notification
+                            const message = this.classList.contains('accept-form') 
+                                ? 'Connection request accepted!' 
+                                : 'Connection request rejected.';
+                            
+                            const notification = document.createElement('div');
+                            notification.className = 'success-toast show';
+                            notification.innerHTML = `
+                                <i class='bx bx-check-circle'></i> ${message}
+                                <button class="close-toast" type="button"><i class='bx bx-x'></i></button>
+                            `;
+                            
+                            document.body.appendChild(notification);
+                            
+                            setTimeout(() => {
+                                notification.classList.remove('show');
+                                setTimeout(() => {
+                                    notification.remove();
+                                }, 300);
+                            }, 5000);
+                            
+                            // Add click handler to notification close button
+                            const closeBtn = notification.querySelector('.close-toast');
+                            closeBtn.addEventListener('click', function() {
+                                notification.classList.remove('show');
+                                setTimeout(() => {
+                                    notification.remove();
+                                }, 300);
+                            });
+                        } else {
+                            // Restore button
+                            button.innerHTML = originalContent;
+                            button.disabled = false;
+                            
+                            // Show error
+                            const notification = document.createElement('div');
+                            notification.className = 'error-toast show';
+                            notification.innerHTML = `
+                                <i class='bx bx-error-circle'></i> ${data.error || 'Something went wrong'}
+                                <button class="close-toast" type="button"><i class='bx bx-x'></i></button>
+                            `;
+                            
+                            document.body.appendChild(notification);
+                            
+                            setTimeout(() => {
+                                notification.classList.remove('show');
+                                setTimeout(() => {
+                                    notification.remove();
+                                }, 300);
+                            }, 5000);
+                            
+                            // Add click handler to notification close button
+                            const closeBtn = notification.querySelector('.close-toast');
+                            closeBtn.addEventListener('click', function() {
+                                notification.classList.remove('show');
+                                setTimeout(() => {
+                                    notification.remove();
+                                }, 300);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        button.innerHTML = originalContent;
+                        button.disabled = false;
+                        
+                        // Show error
+                        const notification = document.createElement('div');
+                        notification.className = 'error-toast show';
+                        notification.innerHTML = `
+                            <i class='bx bx-error-circle'></i> Failed to process request
+                            <button class="close-toast" type="button"><i class='bx bx-x'></i></button>
+                        `;
+                        
+                        document.body.appendChild(notification);
+                        
+                        setTimeout(() => {
+                            notification.classList.remove('show');
+                            setTimeout(() => {
+                                notification.remove();
+                            }, 300);
+                        }, 5000);
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

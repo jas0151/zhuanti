@@ -1,0 +1,315 @@
+/* Add to a new file: profile-cards.css */
+
+/* Enhanced Profile Cards */
+.profile-card {
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    overflow: hidden;
+    border-radius: 16px;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+
+.profile-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+}
+
+.profile-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+}
+
+.profile-header {
+    position: relative;
+    padding: 30px 20px 20px;
+}
+
+.profile-avatar {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin: 0 auto 15px;
+    border: 4px solid white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.profile-card:hover .profile-avatar {
+    transform: scale(1.05);
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.profile-card:hover .profile-avatar img {
+    transform: scale(1.1);
+}
+
+.profile-badge {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background: var(--primary);
+    color: white;
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.profile-badge i {
+    font-size: 14px;
+}
+
+.profile-name {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.profile-name h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.profile-subtitle {
+    color: var(--text-light);
+    font-size: 14px;
+}
+
+.profile-stats {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin: 15px 0;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--primary);
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.profile-bio {
+    background: var(--background-alt);
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    position: relative;
+}
+
+.profile-bio::before {
+    content: '"';
+    position: absolute;
+    top: 5px;
+    left: 10px;
+    font-size: 40px;
+    color: rgba(0,0,0,0.1);
+    font-family: Georgia, serif;
+}
+
+.profile-bio p {
+    font-style: italic;
+    padding-left: 15px;
+    position: relative;
+    z-index: 1;
+}
+
+.profile-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 15px 0;
+}
+
+.profile-tag {
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.profile-tag:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.profile-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.profile-btn {
+    flex: 1;
+    padding: 8px 0;
+    text-align: center;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.profile-btn.primary {
+    background: var(--primary);
+    color: white;
+}
+
+.profile-btn.secondary {
+    background: var(--background-alt);
+    color: var(--text);
+}
+
+.profile-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.profile-btn.primary:hover {
+    background: var(--primary-dark);
+}
+
+.profile-btn.secondary:hover {
+    background: #e5e7eb;
+}
+
+/* Animated Match Score */
+.match-score {
+    position: relative;
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 15px;
+}
+
+.match-score svg {
+    width: 100%;
+    height: 100%;
+}
+
+.match-score circle {
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-origin: center;
+}
+
+.match-score-bg {
+    stroke: #f3f4f6;
+}
+
+.match-score-value {
+    stroke: var(--primary);
+    stroke-dasharray: 283; /* Circumference of circle with radius 45 */
+    transition: stroke-dashoffset 1s ease;
+}
+
+.match-score-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+/* Profile Completion Meter */
+.profile-completion-box {
+    background: var(--background-alt);
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.profile-completion-box h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-completion-box h4::before {
+    content: '';
+    display: block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+}
+
+.completion-meter {
+    height: 8px;
+    background: rgba(0,0,0,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.completion-progress {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+    transition: width 0.5s ease;
+}
+
+.completion-text {
+    font-size: 12px;
+    color: var(--text-light);
+    text-align: right;
+    margin-top: 5px;
+}
+
+.completion-tips {
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.completion-tips ul {
+    margin-top: 5px;
+    padding-left: 20px;
+}
+
+.completion-tips li {
+    margin-bottom: 3px;
+}
+
+.completion-tips a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.completion-tips a:hover {
+    text-decoration: underline;
+}

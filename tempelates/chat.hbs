@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with {{otherUser.profile.firstName}} - CampusMatch</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="/chat.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">CampusMatch</a>
+            <div class="nav-menu">
+                <ul class="nav-list">
+                    <li><a href="/main"><i class='bx bx-home'></i> Dashboard</a></li>
+                    <li><a href="/gallery"><i class='bx bx-images'></i> Gallery</a></li>
+                    <li><a href="/matches"><i class='bx bx-heart'></i> Matches</a></li>
+                    <li><a href="/connections" class="active"><i class='bx bx-user-check'></i> Connections</a></li>
+                    <li><a href="/logout" class="nav-signup"><i class='bx bx-log-out'></i> Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="chat-container">
+        <div class="chat-sidebar">
+            <div class="sidebar-header">
+                <h2>Messages</h2>
+                <a href="/connections" class="back-btn">
+                    <i class='bx bx-arrow-back'></i>
+                    Back
+                </a>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{#if otherUser.profile.photo}}
+                        <img src="/photo/{{otherUser._id}}" alt="{{otherUser.profile.firstName}}">
+                    {{else}}
+                        <img src="/default-avatar.png" alt="Default Avatar">
+                    {{/if}}
+                </div>
+                <div class="user-details">
+                    <h3>{{otherUser.profile.firstName}} {{otherUser.profile.lastName}}</h3>
+                    <p>{{otherUser.profile.university}}</p>
+                </div>
+            </div>
+            <div class="sidebar-actions">
+                <a href="/view-profile/{{otherUser._id}}" class="user-profile-link">
+                    <i class='bx bx-user'></i>
+                    View Profile
+                </a>
+            </div>
+        </div>
+        
+        <div class="chat-main">
+            <div class="chat-header">
+                <div class="header-user-info">
+                    <div class="header-avatar">
+                        {{#if otherUser.profile.photo}}
+                            <img src="/photo/{{otherUser._id}}" alt="{{otherUser.profile.firstName}}">
+                        {{else}}
+                            <img src="/default-avatar.png" alt="Default Avatar">
+                        {{/if}}
+                    </div>
+                    <div class="header-details">
+                        <h3>{{otherUser.profile.firstName}} {{otherUser.profile.lastName}}</h3>
+                        <p>{{otherUser.profile.major}}, Year {{otherUser.profile.yearOfStudy}}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="messages-container" id="messagesContainer">
+                {{#if conversation.messages.length}}
+                    {{#each conversation.messages}}
+                        <div class="message {{#if_eq this.sender ../currentUser._id}}outgoing{{else}}incoming{{/if_eq}}">
+                            <div class="message-content">
+                                <p>{{this.content}}</p>
+                                <span class="message-time">{{formatTime this.timestamp}}</span>
+                            </div>
+                        </div>
+                    {{/each}}
+                {{else}}
+                    <div class="empty-chat">
+                        <div class="empty-chat-icon">
+                            <i class='bx bx-message-alt-dots'></i>
+                        </div>
+                        <p>No messages yet. Start the conversation!</p>
+                    </div>
+                {{/if}}
+            </div>
+            
+            <div class="message-composer">
+                <form id="messageForm" action="/send-message/{{otherUser._id}}" method="POST">
+                    <div class="composer-input">
+                        <input type="text" name="message" placeholder="Type a message..." autocomplete="off" required>
+                    </div>
+                    <button type="submit" class="send-btn">
+                        <i class='bx bx-send'></i>
+                        <span>Send</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageForm = document.getElementById('messageForm');
+            const messageInput = messageForm.querySelector('input[name="message"]');
+            
+            // Scroll to bottom of messages
+            function scrollToBottom() {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+            
+            // Initial scroll
+            scrollToBottom();
+            
+            // Handle form submission with AJAX
+            messageForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const message = messageInput.value.trim();
+                if (!message) return;
+                
+                // Show message immediately
+                const newMessage = document.createElement('div');
+                newMessage.className = 'message outgoing';
+                newMessage.innerHTML = `
+                    <div class="message-content">
+                        <p>${message}</p>
+                        <span class="message-time">Just now</span>
+                    </div>
+                `;
+                
+                // Add to container and scroll
+                messagesContainer.appendChild(newMessage);
+                scrollToBottom();
+                
+                // Clear input
+                messageInput.value = '';
+                
+                // Send AJAX request
+                fetch(this.action, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ message })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Update time on message
+                    if (data.success) {
+                        const timeSpan = newMessage.querySelector('.message-time');
+                        timeSpan.textContent = formatTime(new Date());
+                    } else {
+                        // Show error
+                        console.error('Error sending message:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+            
+            // Poll for new messages
+            let lastUpdated = '{{conversation.lastUpdated}}';
+            
+            function pollMessages() {
+                fetch(`/messages/{{otherUser._id}}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.lastUpdated !== lastUpdated) {
+                            // Update messages
+                            lastUpdated = data.lastUpdated;
+                            
+                            // Remove all messages
+                            messagesContainer.innerHTML = '';
+                            
+                            // Add messages
+                            if (data.messages.length > 0) {
+                                data.messages.forEach(message => {
+                                    const isSender = message.sender === '{{currentUser._id}}';
+                                    const messageDiv = document.createElement('div');
+                                    messageDiv.className = `message ${isSender ? 'outgoing' : 'incoming'}`;
+                                    messageDiv.innerHTML = `
+                                        <div class="message-content">
+                                            <p>${message.content}</p>
+                                            <span class="message-time">${formatTime(new Date(message.timestamp))}</span>
+                                        </div>
+                                    `;
+                                    messagesContainer.appendChild(messageDiv);
+                                });
+                                
+                                // Scroll to bottom
+                                scrollToBottom();
+                            } else {
+                                // Show empty state
+                                messagesContainer.innerHTML = `
+                                    <div class="empty-chat">
+                                        <div class="empty-chat-icon">
+                                            <i class='bx bx-message-alt-dots'></i>
+                                        </div>
+                                        <p>No messages yet. Start the conversation!</p>
+                                    </div>
+                                `;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error polling messages:', error);
+                    });
+            }
+            
+            // Poll every 5 seconds
+            setInterval(pollMessages, 5000);
+            
+            // Format time helper function
+            function formatTime(date) {
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                const messageDate = new Date(date);
+                const messageDay = new Date(messageDate.getFullYear(), messageDate.getMonth(), messageDate.getDate());
+                
+                let formattedTime = '';
+                if (messageDay.getTime() === today.getTime()) {
+                    formattedTime = 'Today, ';
+                } else if (messageDay.getTime() === yesterday.getTime()) {
+                    formattedTime = 'Yesterday, ';
+                } else {
+                    formattedTime = `${messageDate.getDate()}/${messageDate.getMonth() + 1}/${messageDate.getFullYear()}, `;
+                }
+                
+                const hours = messageDate.getHours();
+                const minutes = messageDate.getMinutes();
+                formattedTime += `${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
+                
+                return formattedTime;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{viewedUser.profile.firstName}}'s Profile - CampusMatch</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="/home.css">
+    <link rel="stylesheet" href="/view-profile.css">
+    <style>
+        /* Inline critical styles to ensure proper rendering */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9fafb;
+            color: #333;
+        }
+        
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background-color: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #8b5cf6;
+            text-decoration: none;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            text-decoration: none;
+            color: #4b5563;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .logout-btn {
+            background-color: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .profile-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .cover-photo {
+            height: 200px;
+            background: linear-gradient(135deg, #6366f1, #ec4899);
+            border-radius: 0.75rem 0.75rem 0 0;
+        }
+        
+        .profile-header {
+            background-color: white;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+        
+        .profile-info {
+            padding: 1.5rem;
+            position: relative;
+        }
+        
+        .profile-photo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid white;
+            position: absolute;
+            top: -60px;
+            left: 1.5rem;
+            overflow: hidden;
+        }
+        
+        .profile-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-name {
+            margin-left: 140px;
+            margin-bottom: 1rem;
+        }
+        
+        .profile-name h1 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1.75rem;
+        }
+        
+        .profile-details {
+            margin-left: 140px;
+            color: #6b7280;
+        }
+        
+        .match-indicator {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background-color: #8b5cf6;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+        
+        .match-value {
+            font-size: 1.25rem;
+        }
+        
+        .match-label {
+            font-size: 0.75rem;
+        }
+        
+        .content-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            color: #4b5563;
+            font-weight: 500;
+        }
+        
+        .connect-btn {
+            background-color: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 1rem auto;
+        }
+        
+        .interest-category {
+            margin-bottom: 1.5rem;
+        }
+        
+        .interest-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            color: #4b5563;
+        }
+        
+        .interest-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .interest-tag {
+            background-color: #f3f4f6;
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+        }
+        
+        /* Gallery Styles */
+        .gallery-container {
+            margin-top: 1rem;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .gallery-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            aspect-ratio: 1;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background-color: #f3f4f6;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .photo-caption {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 12px;
+            font-size: 0.875rem;
+            opacity: 0;
+            transform: translateY(100%);
+            transition: all 0.3s ease;
+        }
+
+        .gallery-item:hover .photo-caption {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .empty-gallery {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            color: #d1d5db;
+            margin-bottom: 1rem;
+        }
+        
+        /* Success Notification */
+        .success-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            background-color: #10b981;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            animation: slideIn 0.3s forwards;
+        }
+
+        .success-notification.hide {
+            animation: slideOut 0.3s forwards;
+        }
+
+        .success-notification i {
+            font-size: 1.25rem;
+            margin-right: 0.75rem;
+        }
+
+        .close-notification {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            margin-left: 1rem;
+            padding: 0;
+            font-size: 1.25rem;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .close-notification:hover {
+            opacity: 1;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .profile-photo {
+                width: 100px;
+                height: 100px;
+                top: -50px;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            
+            .profile-name, .profile-details {
+                margin-left: 0;
+                text-align: center;
+                margin-top: 60px;
+            }
+            
+            .match-indicator {
+                position: static;
+                margin: 1rem auto 0;
+            }
+            
+            .gallery-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-logo">CampusMatch</a>
+        <div class="nav-menu">
+            <ul class="nav-list">
+                <li><a href="/main"><i class='bx bx-home'></i> Dashboard</a></li>
+                <li><a href="/gallery"><i class='bx bx-images'></i> Gallery</a></li>
+                <li><a href="/matches"><i class='bx bx-heart'></i> Matches</a></li>
+                <li><a href="/logout" class="nav-signup"><i class='bx bx-log-out'></i> Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+    <div class="profile-container">
+        <!-- Profile Header -->
+        <div class="profile-header">
+    <div class="profile-photo">
+    {{#if userProfile.profile.photo}}
+        <img src="/photo/{{userProfile._id}}" 
+             alt="{{userProfile.profile.firstName}}'s Profile Photo"
+             onerror="this.onerror=null; this.src='/default-avatar.png';">
+    {{else}}
+        <img src="/default-avatar.png" alt="Default Avatar">
+    {{/if}}
+</div>
+
+<div class="profile-badges">
+    {{#if viewedUser.hasProfile}}
+    <div class="badge verified-badge" title="Verified Profile">
+        <i class='bx bx-check'></i>
+        <span>Verified</span>
+    </div>
+    {{/if}}
+    
+    {{#if viewedUser.profile.university}}
+    <div class="badge university-badge" title="Student at {{viewedUser.profile.university}}">
+        <i class='bx bx-building-house'></i>
+        <span>{{viewedUser.profile.university}}</span>
+    </div>
+    {{/if}}
+    
+    <div class="badge match-badge" title="Match compatibility score">
+        <div class="match-percentage">{{matchPercentage}}%</div>
+        <svg width="36" height="36" viewBox="0 0 36 36">
+            <circle cx="18" cy="18" r="16" class="match-circle-bg"></circle>
+            <circle cx="18" cy="18" r="16" class="match-circle-progress" 
+                    style="stroke-dashoffset: calc(100 - {{matchPercentage}})"></circle>
+        </svg>
+    </div>
+</div>
+
+    
+    <div class="profile-info">
+        <h1>{{userProfile.profile.firstName}} {{userProfile.profile.lastName}}</h1>
+        <p class="profile-subtitle">{{userProfile.profile.university}}</p>
+        <p class="profile-details">{{userProfile.profile.major}}, Year {{userProfile.profile.yearOfStudy}}</p>
+        
+        <div class="profile-stats">
+            <div class="stat">
+                <i class='bx bx-map'></i>
+                <span>{{userProfile.profile.domicile}}</span>
+            </div>
+            <div class="stat">
+                <i class='bx bx-flag'></i>
+                <span>{{userProfile.profile.nationality}}</span>
+            </div>
+        </div>
+        
+        {{#if matchScore}}
+        <div class="match-score-banner">
+            <span class="match-percentage">{{matchScore}}%</span>
+            <span class="match-text">Match with you</span>
+        </div>
+        {{/if}}
+        
+        <div class="profile-actions">
+            {{#if canConnect}}
+                <form action="/connect/{{userProfile._id}}" method="POST">
+                    <button type="submit" class="btn btn-primary connect-btn">
+                        <i class='bx bx-link'></i> Connect
+                    </button>
+                </form>
+            {{else if isConnected}}
+                <button disabled class="btn btn-success connected-btn">
+                    <i class='bx bx-check-double'></i> Connected
+                </button>
+            {{else if isPending}}
+                <button disabled class="btn btn-secondary pending-btn">
+                    <i class='bx bx-time'></i> Connection Requested
+                </button>
+            {{/if}}
+            <a href="/matches" class="btn btn-secondary back-btn">
+                <i class='bx bx-arrow-back'></i> Back to Matches
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Gallery section -->
+<div class="profile-section">
+    <h2><i class='bx bx-images'></i> Gallery</h2>
+    
+    {{#if userProfile.profile.galleryPhotos.length}}
+        <div class="gallery-grid">
+    {{#each userProfile.profile.galleryPhotos}}
+        {{#unless isPrivate}}
+            <div class="gallery-item">
+                <img src="/uploads/gallery/{{this.filename}}" 
+                     alt="Gallery Photo"
+                     onerror="this.onerror=null; this.src='/default-gallery-image.png';">
+            </div>
+        {{/unless}}
+    {{/each}}
+</div>
+        <!-- About Me Section -->
+        <div class="content-card">
+            <div class="section-title">
+                <i class='bx bx-user'></i> About Me
+            </div>
+            <p>{{viewedUser.profile.bio}}</p>
+            
+            <form action="/connect/{{viewedUser._id}}" method="POST" id="connectForm">
+                <button type="submit" class="connect-btn">
+                    <i class='bx bx-user-plus'></i> Connect
+                </button>
+            </form>
+        </div>
+
+        <!-- Interests Section -->
+        <div class="content-card">
+            <div class="section-title">
+                <i class='bx bx-heart'></i> Interests
+            </div>
+            
+            {{#if viewedUser.profile.interests.hobbies.length}}
+            <div class="interest-category">
+                <div class="interest-title">
+                    <i class='bx bx-joystick'></i> Hobbies
+                </div>
+                <div class="interest-tags">
+                    {{#each viewedUser.profile.interests.hobbies}}
+                        <span class="interest-tag">{{this}}</span>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
+            
+            {{#if viewedUser.profile.interests.classes.length}}
+            <div class="interest-category">
+                <div class="interest-title">
+                    <i class='bx bx-book'></i> Classes
+                </div>
+                <div class="interest-tags">
+                    {{#each viewedUser.profile.interests.classes}}
+                        <span class="interest-tag">{{this}}</span>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
+            
+            {{#if viewedUser.profile.interests.clubs.length}}
+            <div class="interest-category">
+                <div class="interest-title">
+                    <i class='bx bx-group'></i> Clubs
+                </div>
+                <div class="interest-tags">
+                    {{#each viewedUser.profile.interests.clubs}}
+                        <span class="interest-tag">{{this}}</span>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
+            
+            {{#if viewedUser.profile.interests.languages.length}}
+            <div class="interest-category">
+                <div class="interest-title">
+                    <i class='bx bx-conversation'></i> Languages
+                </div>
+                <div class="interest-tags">
+                    {{#each viewedUser.profile.interests.languages}}
+                        <span class="interest-tag">{{this}}</span>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
+        </div>
+
+        <!-- Gallery Section -->
+        <div class="content-card">
+            <div class="section-title">
+                <i class='bx bx-images'></i> Gallery
+            </div>
+            <div class="gallery-container">
+                {{#if publicPhotos.length}}
+                    <div class="gallery-grid">
+                        {{#each publicPhotos}}
+                            <div class="gallery-item">
+                                <img src="/gallery-photo/{{../viewedUser._id}}/{{_id}}" alt="Gallery Photo">
+                                {{#if description}}
+                                    <div class="photo-caption">{{description}}</div>
+                                {{/if}}
+                            </div>
+                        {{/each}}
+                    </div>
+                {{else}}
+                    <div class="empty-gallery">
+                        <div class="empty-icon"><i class='bx bx-image'></i></div>
+                        <p>No gallery photos available</p>
+                    </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+
+    {{#if success}}
+    <div class="success-notification" id="successNotification">
+        {{#if_eq success 'connection_requested'}}
+            <i class='bx bx-check-circle'></i>
+            <span>Connection request sent!</span>
+        {{/if_eq}}
+        <button class="close-notification" onclick="closeNotification()">
+            <i class='bx bx-x'></i>
+        </button>
+    </div>
+    {{/if}}
+
+    <script>
+        // Handle notification close
+        function closeNotification() {
+            const notification = document.getElementById('successNotification');
+            if (notification) {
+                notification.classList.add('hide');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }
+        }
+
+        // Auto-hide notification after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const notification = document.getElementById('successNotification');
+            if (notification) {
+                setTimeout(() => {
+                    closeNotification();
+                }, 5000);
+            }
+            
+            // Handle connection form submission
+            const connectForm = document.getElementById('connectForm');
+            if (connectForm) {
+                connectForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Show loading state
+                    const button = this.querySelector('button');
+                    const originalContent = button.innerHTML;
+                    button.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Connecting...';
+                    button.disabled = true;
+                    
+                    // Send AJAX request
+                    fetch(this.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Replace button with pending status
+                            button.outerHTML = `
+                                <button class="connect-btn pending" disabled>
+                                    <i class='bx bx-time'></i> Connection Pending
+                                </button>
+                            `;
+                            
+                            // Show success notification
+                            const notification = document.createElement('div');
+                            notification.className = 'success-notification';
+                            notification.id = 'successNotification';
+                            notification.innerHTML = `
+                                <i class='bx bx-check-circle'></i>
+                                <span>Connection request sent!</span>
+                                <button class="close-notification" onclick="closeNotification()">
+                                    <i class='bx bx-x'></i>
+                                </button>
+                            `;
+                            
+                            document.body.appendChild(notification);
+                            
+                            // Auto-hide after 5 seconds
+                            setTimeout(() => {
+                                closeNotification();
+                            }, 5000);
+                        } else {
+                            // Restore button
+                            button.innerHTML = originalContent;
+                            button.disabled = false;
+                            
+                            // Show error message
+                            alert(data.error || 'Something went wrong');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        button.innerHTML = originalContent;
+                        button.disabled = false;
+                        alert('Failed to send request');
+                    });
+                });
+            }
+            
+            // Handle image loading
+            const galleryImages = document.querySelectorAll('.gallery-item img');
+            
+            galleryImages.forEach(img => {
+                img.onload = function() {
+                    img.parentElement.classList.add('loaded');
+                };
+                
+                img.onerror = function() {
+                    img.parentElement.classList.add('error');
+                    img.style.display = 'none';
+                };
+            });
+        });
+document.addEventListener('DOMContentLoaded', function() {
+    // Card hover effect
+    const cards = document.querySelectorAll('.content-card');
+    
+    cards.forEach(card => {
+        card.addEventListener('mousemove', function(e) {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            card.style.setProperty('--mouse-x', `${x}px`);
+            card.style.setProperty('--mouse-y', `${y}px`);
+        });
+    });
+    
+    // Animate match score circle on load
+    const matchCircle = document.querySelector('.match-circle-progress');
+    if (matchCircle) {
+        // Set initial state (hidden)
+        matchCircle.style.strokeDashoffset = '100';
+        
+        // Animate after a delay
+        setTimeout(() => {
+            const matchPercentage = {{matchPercentage}} || 0;
+            matchCircle.style.strokeDashoffset = `calc(100 - ${matchPercentage})`;
+        }, 500);
+    }
+    
+    // Add random delays to interest tags for staggered animation
+    const interestTags = document.querySelectorAll('.interest-tag');
+    interestTags.forEach((tag, index) => {
+        tag.style.animationDelay = `${index * 100}ms`;
+        tag.style.animation = 'fadeInUp 0.5s ease forwards';
+    });
+    
+    // Lazy load gallery images with fade-in effect
+    const galleryImages = document.querySelectorAll('.gallery-item img');
+    
+    const lazyLoadOptions = {
+        threshold: 0.1,
+        rootMargin: '100px'
+    };
+    
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                const src = img.dataset.src;
+                
+                if (src) {
+                    img.src = src;
+                    img.style.opacity = '0';
+                    
+                    img.onload = function() {
+                        img.style.transition = 'opacity 0.5s ease';
+                        img.style.opacity = '1';
+                    };
+                    
+                    observer.unobserve(img);
+                }
+            }
+        });
+    }, lazyLoadOptions);
+    
+    galleryImages.forEach(img => {
+        // Store the original src in data-src and remove src
+        img.dataset.src = img.src;
+        img.removeAttribute('src');
+        
+        // Observe the image
+        imageObserver.observe(img);
+    });
+});
+    </script>
+</body>
+</html>

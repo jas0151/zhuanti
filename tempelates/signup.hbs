@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusMatch - Sign Up</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="/signup.css" rel="stylesheet" type="text/css">
+    <style>
+        .error-message {
+            color: #e74c3c;
+            background-color: rgba(231, 76, 60, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        .google-suggestion {
+            margin-top: 10px;
+            text-align: center;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .google-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 15px;
+            background-color: #4285F4;
+            color: white;
+            border-radius: 5px;
+            margin: 10px auto;
+            width: 220px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+        
+        .google-btn i {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+        .google-btn:hover {
+            background-color: #3367D6;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <nav class="nav">
+            <div class="nav-container">
+                <a href="/" class="nav-logo">CampusMatch</a>
+                <div class="nav-menu" id="navMenu">
+                    <ul>
+                        <li><a href="/services" class="link">
+                            <i class='bx bx-server'></i>Services
+                        </a></li>
+                        <li><a href="/about" class="link">
+                            <i class='bx bx-info-circle'></i>About
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="form-box">
+            {{#if error}}
+            <div class="error-message">
+                {{error}}
+                {{#if isGoogleAccount}}
+                <div class="google-suggestion">
+                    <p>Use Google Sign-in instead:</p>
+                    <a href="/auth/google" class="google-btn">
+                        <i class='bx bxl-google'></i>
+                        Sign in with Google
+                    </a>
+                </div>
+                {{/if}}
+            </div>
+            {{/if}}
+            
+            <form action="/signup" method="post">
+                <div class="form-header">
+                    <i class='bx bx-user-circle'></i>
+                    <h1>Create Your Account</h1>
+                    <p>Join our community today</p>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-box">
+                        <input id="email" name="email" type="email" class="input-field" placeholder="Email" required>
+                        <i class='bx bx-envelope'></i>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-box">
+                        <input id="password" name="password" type="password" class="input-field" placeholder="Password" required>
+                        <i class='bx bx-lock-alt'></i>
+                        <i class='bx bx-show toggle-password'></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    Create Account
+                    <i class='bx bx-right-arrow-alt'></i>
+                </button>
+
+                <div class="divider">
+                    <span>or sign up with</span>
+                </div>
+
+                <div class="social-signup">
+                    <a href="/auth/google" class="social-btn">
+                        <i class='bx bxl-google'></i>
+                    </a>
+                    <a href="/auth/github" class="social-btn">
+                        <i class='bx bxl-github'></i>
+                    </a>
+                    <a href="/auth/twitter" class="social-btn">
+                        <i class='bx bxl-twitter'></i>
+                    </a>
+                </div>
+
+                <div class="login-link">
+                    <p>Already have an account? <a href="/login">Sign in</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('.toggle-password').addEventListener('click', function() {
+            const passwordInput = document.querySelector('#password');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                this.classList.remove('bx-show');
+                this.classList.add('bx-hide');
+            } else {
+                passwordInput.type = 'password';
+                this.classList.remove('bx-hide');
+                this.classList.add('bx-show');
+            }
+        });
+    </script>
+</body>
+</html>

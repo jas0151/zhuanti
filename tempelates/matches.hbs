@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Your Matches - CampusMatch</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/matches.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">CampusMatch</a>
+            <div class="nav-menu">
+                <ul class="nav-list">
+                    <li><a href="/main"><i class='bx bx-home'></i> Dashboard</a></li>
+                    <li><a href="/gallery"><i class='bx bx-images'></i> Gallery</a></li>
+                    <li><a href="/matches" class="active"><i class='bx bx-heart'></i> Matches</a></li>
+                    <li><a href="/connections"><i class='bx bx-user-check'></i> Connections</a></li>
+                    <li><a href="/logout" class="nav-signup"><i class='bx bx-log-out'></i> Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="matches-container">
+        <!-- Modern header with background animation -->
+        <div class="matches-header">
+            <div class="header-bg">
+                <div class="circle circle-1"></div>
+                <div class="circle circle-2"></div>
+                <div class="circle circle-3"></div>
+            </div>
+            <h1>Find Your Perfect Match</h1>
+            <p>Discover fellow students who share your interests, academic goals, and campus lifestyle</p>
+        </div>
+
+        <!-- Modern Filter Container -->
+        <div class="filter-container">
+            <div class="filter-header" aria-expanded="false" id="filterToggle">
+                <h2><i class='bx bx-filter-alt'></i> Find Your Match</h2>
+                <i class='bx bx-chevron-down'></i>
+            </div>
+            
+            <!-- Quick filters with modern badges -->
+            <div class="quick-filters">
+                <button class="quick-filter" data-filter="same-university">
+                    <i class='bx bx-buildings'></i> Same University
+                    <span class="badge">{{sameUniversityCount}}</span>
+                </button>
+                <button class="quick-filter" data-filter="same-major">
+                    <i class='bx bx-book'></i> Same Major
+                    <span class="badge">{{sameMajorCount}}</span>
+                </button>
+                <button class="quick-filter" data-filter="high-match">
+                    <i class='bx bx-trophy'></i> 80%+ Match
+                    <span class="badge">{{highMatchCount}}</span>
+                </button>
+                <button class="quick-filter" data-filter="new">
+                    <i class='bx bx-time'></i> New
+                    <span class="badge">{{newUsersCount}}</span>
+                </button>
+            </div>
+            
+            <!-- Advanced filters (expandable) -->
+            <div class="advanced-filters" id="advancedFilters">
+                <div class="filter-tabs">
+                    <div class="filter-tab active" data-tab="general">General</div>
+                    <div class="filter-tab" data-tab="personal">Personal</div>
+                    <div class="filter-tab" data-tab="academic">Academic</div>
+                    <div class="filter-tab" data-tab="interests">Interests</div>
+                </div>
+                
+                <form id="advancedSearchForm" action="/matches" method="GET">
+                    <div class="filter-sections">
+                        <!-- General section -->
+                        <div class="filter-section active" data-section="general">
+                            <div class="form-group">
+                                <label for="search">Name or Keyword</label>
+                                <div class="input-with-icon">
+                                    <i class='bx bx-search-alt'></i>
+                                    <input type="text" id="search" name="search" placeholder="Search by name or keyword" value="{{query.search}}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Personal section -->
+                        <div class="filter-section" data-section="personal">
+                            <div class="form-group">
+                                <label for="gender">Gender</label>
+                                <div class="select-with-icon">
+                                    <i class='bx bx-user'></i>
+                                    <select id="gender" name="gender">
+                                        <option value="">Any Gender</option>
+                                        <option value="male" {{#if_eq query.gender "male"}}selected{{/if_eq}}>Male</option>
+                                        <option value="female" {{#if_eq query.gender "female"}}selected{{/if_eq}}>Female</option>
+                                        <option value="non-binary" {{#if_eq query.gender "non-binary"}}selected{{/if_eq}}>Non-binary</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="domicile">Location</label>
+                                <div class="select-with-icon">
+                                    <i class='bx bx-map'></i>
+                                    <select id="domicile" name="domicile">
+                                        <option value="">Any Location</option>
+                                        {{#each filters.domiciles}}
+                                            <option value="{{this}}" {{#if_eq ../query.domicile this}}selected{{/if_eq}}>{{this}}</option>
+                                        {{/each}}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="language">Language</label>
+                                <div class="select-with-icon">
+                                    <i class='bx bx-conversation'></i>
+                                    <select id="language" name="language">
+                                        <option value="">Any Language</option>
+                                        {{#each filters.languages}}
+                                            <option value="{{this}}" {{#if_eq ../query.language this}}selected{{/if_eq}}>{{this}}</option>
+                                        {{/each}}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Academic section -->
+                        <div class="filter-section" data-section="academic">
+                            <div class="form-group">
+                                <label for="university">University</label>
+                                <div class="select-with-icon">
+                                    <i class='bx bxs-graduation'></i>
+                                    <select id="university" name="university">
+                                        <option value="">Any University</option>
+                                        {{#each filters.universities}}
+                                            <option value="{{this}}" {{#if_eq ../query.university this}}selected{{/if_eq}}>{{this}}</option>
+                                        {{/each}}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="major">Major</label>
+                                <div class="select-with-icon">
+                                    <i class='bx bx-book-open'></i>
+                                    <select id="major" name="major">
+                                        <option value="">Any Major</option>
+                                        {{#each filters.majors}}
+                                            <option value="{{this}}" {{#if_eq ../query.major this}}selected{{/if_eq}}>{{this}}</option>
+                                        {{/each}}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="yearOfStudy">Year of Study</label>
+                                <div class="select-with-icon">
+                                    <i class='bx bx-calendar'></i>
+                                    <select id="yearOfStudy" name="yearOfStudy">
+                                        <option value="">Any Year</option>
+                                        <option value="1" {{#if_eq query.yearOfStudy "1"}}selected{{/if_eq}}>First Year</option>
+                                        <option value="2" {{#if_eq query.yearOfStudy "2"}}selected{{/if_eq}}>Second Year</option>
+                                        <option value="3" {{#if_eq query.yearOfStudy "3"}}selected{{/if_eq}}>Third Year</option>
+                                        <option value="4" {{#if_eq query.yearOfStudy "4"}}selected{{/if_eq}}>Fourth Year</option>
+                                        <option value="5+" {{#if_eq query.yearOfStudy "5+"}}selected{{/if_eq}}>Graduate Student</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Interests section -->
+                        <div class="filter-section" data-section="interests">
+                            <div class="form-group">
+                                <label for="hobby">Hobby</label>
+                                <div class="select-with-icon">
+                                    <i class='bx bx-joystick'></i>
+                                    <select id="hobby" name="hobby">
+                                        <option value="">Any Hobby</option>
+                                        {{#each filters.hobbies}}
+                                            <option value="{{this}}" {{#if_eq ../query.hobby this}}selected{{/if_eq}}>{{this}}</option>
+                                        {{/each}}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="club">Club</label>
+                                <div class="select-with-icon">
+                                    <i class='bx bx-group'></i>
+                                    <select id="club" name="club">
+                                        <option value="">Any Club</option>
+                                        {{#each filters.clubs}}
+                                            <option value="{{this}}" {{#if_eq ../query.club this}}selected{{/if_eq}}>{{this}}</option>
+                                        {{/each}}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="className">Class</label>
+                                <div class="select-with-icon">
+                                    <i class='bx bx-book'></i>
+                                    <select id="className" name="className">
+                                        <option value="">Any Class</option>
+                                        {{#each filters.classes}}
+                                            <option value="{{this}}" {{#if_eq ../query.className this}}selected{{/if_eq}}>{{this}}</option>
+                                        {{/each}}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Active filters display -->
+                    <div class="active-filters" id="activeFilters" style="display: none;">
+                        <span class="active-filter-label">Active Filters:</span>
+                        <div class="filter-tags" id="filterTags">
+                            <!-- Filter tags will be added dynamically via JS -->
+                        </div>
+                        <button type="button" id="clearAllBtn" class="clear-all-btn">Clear All</button>
+                    </div>
+                    
+                    <!-- Filter actions -->
+                    <div class="filter-actions">
+                        <div class="filter-counter">
+                            <span id="filterCount">0</span> filters applied
+                        </div>
+                        <div class="action-buttons">
+                            <button type="button" id="resetSearchBtn" class="reset-btn">
+                                <i class='bx bx-reset'></i> Reset
+                            </button>
+                            <button type="submit" class="search-btn">
+                                <i class='bx bx-search-alt'></i> Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results Summary & View Toggle -->
+        <div class="result-summary">
+            <div class="result-info">
+                <p>Found <span class="result-count">{{potentialMatches.length}}</span> potential matches</p>
+                <button id="refreshBtn" class="refresh-btn" title="Refresh matches">
+                    <i class='bx bx-refresh'></i>
+                </button>
+            </div>
+            
+            <div class="view-toggle">
+                <button class="toggle-btn active" data-view="grid">
+                    <i class='bx bx-grid-alt'></i> Grid
+                </button>
+                <button class="toggle-btn" data-view="swipe">
+                    <i class='bx bx-slider'></i> Swipe
+                </button>
+            </div>
+            
+            <div class="sort-container">
+                <label for="sortMatches">Sort by:</label>
+                <div class="select-with-icon">
+                    <i class='bx bx-sort'></i>
+                    <select id="sortMatches">
+                        <option value="match">Match Percentage</option>
+                        <option value="name">Name (A-Z)</option>
+                        <option value="university">University</option>
+                        <option value="recent">Recently Active</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- SVG Gradient for match percentage circles -->
+        <svg width="0" height="0" style="position:absolute; visibility: hidden;">
+            <defs>
+                <linearGradient id="matchGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#4F46E5" />
+                    <stop offset="100%" stop-color="#EC4899" />
+                </linearGradient>
+            </defs>
+        </svg>
+
+        <!-- Improved Match Cards Grid View -->
+        <div class="matches-grid" id="matchesGrid">
+            {{#if potentialMatches.length}}
+                {{#each potentialMatches}}
+                    <div class="match-card" 
+                         data-match-score="{{this.matchScore}}" 
+                         data-user-name="{{this.user.profile.firstName}}" 
+                         data-university="{{this.user.profile.university}}"
+                         data-user-id="{{this.user._id}}">
+                        <div class="match-header">
+                            <div class="match-photo">
+                                {{#if this.user.profile.photo}}
+                                    <img src="/photo/{{this.user._id}}" 
+                                        alt="{{this.user.profile.firstName}}'s Photo"
+                                        loading="lazy">
+                                {{else}}
+                                    <img src="/default-avatar.png" alt="Default Avatar">
+                                {{/if}}
+                            </div>
+                            
+                            <div class="match-percentage-indicator" title="{{this.matchScore}}% match">
+                                <svg viewBox="0 0 36 36">
+                                    <circle cx="18" cy="18" r="16" class="score-circle-bg"></circle>
+                                    <circle cx="18" cy="18" r="16" class="score-circle-progress" 
+                                            stroke-dasharray="100" 
+                                            stroke-dashoffset="{{subtract 100 this.matchScore}}"
+                                            stroke="url(#matchGradient)"></circle>
+                                </svg>
+                                <div class="match-percentage-inner">
+                                    <span class="match-value">{{this.matchScore}}</span>
+                                    <span class="match-unit">%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="match-info">
+                            <div class="match-name-container">
+                                <h3>{{this.user.profile.firstName}} {{this.user.profile.lastName}}</h3>
+                                {{#if this.isOnline}}
+                                    <span class="online-status" title="Online now"></span>
+                                {{/if}}
+                                <button class="save-match-btn" title="Save match">
+                                    <i class='bx bx-bookmark'></i>
+                                </button>
+                            </div>
+                            
+                            <div class="match-details">
+                                <div class="match-detail-item" title="University">
+                                    <i class='bx bx-buildings'></i>
+                                    <span>{{this.user.profile.university}}</span>
+                                </div>
+                                <div class="match-detail-item" title="Major and Year">
+                                    <i class='bx bx-book'></i>
+                                    <span>{{this.user.profile.major}}{{#if this.user.profile.yearOfStudy}}, Year {{this.user.profile.yearOfStudy}}{{/if}}</span>
+                                </div>
+                                {{#if this.user.profile.domicile}}
+                                <div class="match-detail-item" title="Location">
+                                    <i class='bx bx-map'></i>
+                                    <span>{{this.user.profile.domicile}}</span>
+                                </div>
+                                {{/if}}
+                                {{#if this.lastActive}}
+                                <div class="match-detail-item match-activity" title="Last active">
+                                    <i class='bx bx-time'></i>
+                                    <span>Active {{this.lastActive}}</span>
+                                </div>
+                                {{/if}}
+                            </div>
+                            
+                            <div class="match-common-interests">
+                                <h4><i class='bx bx-bulb'></i> Common Interests</h4>
+                                <div class="common-interests-categories">
+                                    <!-- Hobbies Category -->
+                                    {{#if this.commonInterests.hobbies.length}}
+                                    <div class="interest-category">
+                                        <span class="category-icon"><i class='bx bx-joystick'></i></span>
+                                        <div class="interest-tags">
+                                            {{#each this.commonInterests.hobbies}}
+                                                {{#if @index}}
+                                                    {{#if_lt @index 3}}
+                                                        <span class="interest-tag hobby">{{this}}</span>
+                                                    {{/if_lt}}
+                                                {{else}}
+                                                    <span class="interest-tag hobby">{{this}}</span>
+                                                {{/if}}
+                                            {{/each}}
+                                        </div>
+                                    </div>
+                                    {{/if}}
+                                    
+                                    <!-- Classes Category -->
+                                    {{#if this.commonInterests.classes.length}}
+                                    <div class="interest-category">
+                                        <span class="category-icon"><i class='bx bx-book'></i></span>
+                                        <div class="interest-tags">
+                                            {{#each this.commonInterests.classes}}
+                                                {{#if @index}}
+                                                    {{#if_lt @index 2}}
+                                                        <span class="interest-tag class">{{this}}</span>
+                                                    {{/if_lt}}
+                                                {{else}}
+                                                    <span class="interest-tag class">{{this}}</span>
+                                                {{/if}}
+                                            {{/each}}
+                                        </div>
+                                    </div>
+                                    {{/if}}
+                                    
+                                    <!-- Clubs Category -->
+                                    {{#if this.commonInterests.clubs.length}}
+                                    <div class="interest-category">
+                                        <span class="category-icon"><i class='bx bx-group'></i></span>
+                                        <div class="interest-tags">
+                                            {{#each this.commonInterests.clubs}}
+                                                {{#if @index}}
+                                                    {{#if_lt @index 2}}
+                                                        <span class="interest-tag club">{{this}}</span>
+                                                    {{/if_lt}}
+                                                {{else}}
+                                                    <span class="interest-tag club">{{this}}</span>
+                                                {{/if}}
+                                            {{/each}}
+                                        </div>
+                                    </div>
+                                    {{/if}}
+                                    
+                                    <!-- More interests indicator -->
+                                    {{#if_gt (add 
+                                        this.commonInterests.hobbies.length 
+                                        this.commonInterests.classes.length 
+                                        this.commonInterests.clubs.length) 5}}
+                                        <span class="more-interests">+{{subtract 
+                                            (add 
+                                                this.commonInterests.hobbies.length 
+                                                this.commonInterests.classes.length 
+                                                this.commonInterests.clubs.length) 5}} more</span>
+                                    {{/if_gt}}
+                                </div>
+                            </div>
+                            
+                            {{#if this.publicPhotos.length}}
+                                <div class="gallery-preview">
+                                    <h4><i class='bx bx-images'></i> Photos</h4>
+                                    <div class="photo-preview">
+                                        {{#each this.publicPhotos}}
+                                            {{#if @index}}
+                                                {{#if_lt @index 3}}
+                                                    <img src="/gallery-photo/{{../this.user._id}}/{{this._id}}" alt="Gallery Photo" loading="lazy">
+                                                {{/if_lt}}
+                                            {{else}}
+                                                <img src="/gallery-photo/{{../this.user._id}}/{{this._id}}" alt="Gallery Photo" loading="lazy">
+                                            {{/if}}
+                                        {{/each}}
+                                        
+                                        {{#if_gt this.publicPhotos.length 3}}
+                                            <div class="more-photos">+{{subtract this.publicPhotos.length 3}}</div>
+                                        {{/if_gt}}
+                                    </div>
+                                </div>
+                            {{/if}}
+                            
+                            <div class="match-actions">
+                                <a href="/view-profile/{{this.user._id}}" class="view-profile-btn">
+                                    <i class='bx bx-user'></i>
+                                    <span>View Profile</span>
+                                </a>
+                                
+                                {{#if this.hasRequestedConnection}}
+                                    <div class="connection-requested">
+                                        <i class='bx bx-check'></i> Connection Requested
+                                    </div>
+                                {{else if this.isConnected}}
+                                    <div class="connected">
+                                        <i class='bx bx-check-double'></i> Connected
+                                    </div>
+                                {{else}}
+                                    <form action="/connect/{{this.user._id}}" method="POST" class="connect-form">
+                                        <button type="submit" class="connect-btn">
+                                            <i class='bx bx-link'></i> Connect
+                                        </button>
+                                    </form>
+                                {{/if}}
+                            </div>
+                        </div>
+                    </div>
+                {{/each}}
+            {{else}}
+                <div class="empty-state">
+                    <div class="empty-illustration">
+                        <i class='bx bx-search-alt'></i>
+                    </div>
+                    <h3>No matches found</h3>
+                    <p>We couldn't find any matches with your current search criteria. Try these suggestions:</p>
+                    
+                    <div class="suggestion-cards">
+                        <div class="suggestion-card">
+                            <i class='bx bx-filter-alt'></i>
+                            <h4>Try Fewer Filters</h4>
+                            <p>Broaden your search by removing some filters</p>
+                            <button class="suggestion-btn" id="resetEmptyBtn">Reset Filters</button>
+                        </div>
+                        
+                        <div class="suggestion-card">
+                            <i class='bx bx-edit-alt'></i>
+                            <h4>Update Your Profile</h4>
+                            <p>Add more interests to improve matching</p>
+                            <a href="/edit-interests" class="suggestion-btn">Add Interests</a>
+                        </div>
+                    </div>
+                </div>
+            {{/if}}
+        </div>
+        
+        <!-- Swipe Container (initially hidden) -->
+        <div class="swipe-container" id="swipeContainer" style="display: none;">
+            <!-- Swipe cards will be created dynamically by JS -->
+        </div>
+        
+        <!-- Card Action Buttons for Swipe View -->
+        <div class="card-actions" id="cardActions" style="display: none;">
+            <div class="action-button pass" id="passBtn">
+                <i class='bx bx-x'></i>
+            </div>
+            <div class="action-button like" id="likeBtn">
+                <i class='bx bx-heart'></i>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        {{#if pagination}}
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Showing {{add (multiply (subtract pagination.page 1) pagination.limit) 1}}-{{min (add (multiply (subtract pagination.page 1) pagination.limit) pagination.limit) pagination.totalMatches}} of {{pagination.totalMatches}} matches
+                </div>
+                <div class="pagination-controls">
+                    {{#if pagination.hasPrev}}
+                        <a href="?page={{subtract pagination.page 1}}{{#if query.search}}&search={{query.search}}{{/if}}{{#if query.gender}}&gender={{query.gender}}{{/if}}{{#if query.university}}&university={{query.university}}{{/if}}{{#if query.major}}&major={{query.major}}{{/if}}{{#if query.yearOfStudy}}&yearOfStudy={{query.yearOfStudy}}{{/if}}{{#if query.domicile}}&domicile={{query.domicile}}{{/if}}{{#if query.hobby}}&hobby={{query.hobby}}{{/if}}{{#if query.club}}&club={{query.club}}{{/if}}{{#if query.className}}&className={{query.className}}{{/if}}{{#if query.language}}&language={{query.language}}{{/if}}" class="pagination-btn prev-btn">
+                            <i class='bx bx-chevron-left'></i> Previous
+                        </a>
+                    {{else}}
+                        <button class="pagination-btn prev-btn disabled">
+                            <i class='bx bx-chevron-left'></i> Previous
+                        </button>
+                    {{/if}}
+                    
+                    <div class="pagination-pages">
+                        {{#if_gt pagination.totalPages 1}}
+                            {{#times_pagination pagination.page pagination.totalPages}}
+                                <a href="?page={{this}}{{#if ../query.search}}&search={{../query.search}}{{/if}}{{#if ../query.gender}}&gender={{../query.gender}}{{/if}}{{#if ../query.university}}&university={{../query.university}}{{/if}}{{#if ../query.major}}&major={{../query.major}}{{/if}}{{#if ../query.yearOfStudy}}&yearOfStudy={{../query.yearOfStudy}}{{/if}}{{#if ../query.domicile}}&domicile={{../query.domicile}}{{/if}}{{#if ../query.hobby}}&hobby={{../query.hobby}}{{/if}}{{#if ../query.club}}&club={{../query.club}}{{/if}}{{#if ../query.className}}&className={{../query.className}}{{/if}}{{#if ../query.language}}&language={{../query.language}}{{/if}}" class="pagination-page-btn {{#if_eq this ../pagination.page}}active{{/if_eq}}">
+                                    {{this}}
+                                </a>
+                            {{/times_pagination}}
+                        {{/if_gt}}
+                    </div>
+                    
+                    {{#if pagination.hasNext}}
+                        <a href="?page={{add pagination.page 1}}{{#if query.search}}&search={{query.search}}{{/if}}{{#if query.gender}}&gender={{query.gender}}{{/if}}{{#if query.university}}&university={{query.university}}{{/if}}{{#if query.major}}&major={{query.major}}{{/if}}{{#if query.yearOfStudy}}&yearOfStudy={{query.yearOfStudy}}{{/if}}{{#if query.domicile}}&domicile={{query.domicile}}{{/if}}{{#if query.hobby}}&hobby={{query.hobby}}{{/if}}{{#if query.club}}&club={{query.club}}{{/if}}{{#if query.className}}&className={{query.className}}{{/if}}{{#if query.language}}&language={{query.language}}{{/if}}" class="pagination-btn next-btn">
+                            Next <i class='bx bx-chevron-right'></i>
+                        </a>
+                    {{else}}
+                        <button class="pagination-btn next-btn disabled">
+                            Next <i class='bx bx-chevron-right'></i>
+                        </button>
+                    {{/if}}
+                </div>
+            </div>
+        {{/if}}
+        
+        <!-- Toast Container for Notifications -->
+        <div id="toastContainer" class="toast-container"></div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <a href="/">CampusMatch</a>
+                    <p>Connect with your campus community.</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-section">
+                        <h4>Navigation</h4>
+                        <ul>
+                            <li><a href="/main">Dashboard</a></li>
+                            <li><a href="/gallery">Gallery</a></li>
+                            <li><a href="/matches">Matches</a></li>
+                            <li><a href="/connections">Connections</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Support</h4>
+                        <ul>
+                            <li><a href="/help">Help Center</a></li>
+                            <li><a href="/contact">Contact Us</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Connect</h4>
+                        <div class="social-links">
+                            <a href="#" aria-label="Instagram"><i class='bx bxl-instagram'></i></a>
+                            <a href="#" aria-label="Twitter"><i class='bx bxl-twitter'></i></a>
+                            <a href="#" aria-label="Facebook"><i class='bx bxl-facebook'></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2024 CampusMatch. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="/matches.js"></script>
+</body>
+</html>

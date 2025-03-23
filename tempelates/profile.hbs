@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{#if editing}}Edit{{else}}Create{{/if}} Profile - CampusMatch</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="profile.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        /* Debug styles */
+        .debug-panel {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 300px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            z-index: 10000;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .debug-log {
+            margin-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .error { color: red; }
+        .success { color: green; }
+        .warning { color: orange; }
+        
+        /* Additional custom styles */
+        .profile-photo-section {
+            padding: 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .profile-photo-container {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 3px solid var(--primary-light);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-md);
+            position: relative;
+        }
+        
+        .profile-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-photo-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--background-alt);
+            color: var(--text-light);
+            font-size: 3rem;
+        }
+        
+        .photo-upload-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--primary);
+            color: var(--white);
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+        }
+        
+        .photo-upload-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        .selected-file-info {
+            margin-top: 0.75rem;
+            font-size: 0.875rem;
+            color: var(--text-light);
+            display: none;
+        }
+        
+        .field-error {
+            color: var(--error);
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+        
+        /* Flag styles for nationality dropdown */
+        .nationality-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .nationality-flag {
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-panel" id="debugPanel">
+        <div class="debug-log">Debug mode active - checking page load...</div>
+    </div>
+
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">CampusMatch</a>
+            {{#if editing}}
+            <a href="/main" class="nav-btn"><i class='bx bx-arrow-back'></i> Back to Profile</a>
+            {{/if}}
+        </div>
+    </header>
+
+    <main class="profile-container">
+        <div class="profile-header">
+            <h1>{{#if editing}}Edit{{else}}Create{{/if}} Your Profile</h1>
+            <p>{{#if editing}}Update{{else}}Tell us about{{/if}} yourself to help others get to know you</p>
+        </div>
+
+        <div class="profile-content">
+            <!-- Photo Upload Section -->
+            <div class="profile-photo-section">
+                <h2><i class='bx bx-camera'></i> Profile Photo</h2>
+                <div class="profile-photo-container">
+                    {{#if user.profile.photo}}
+                    <img src="/uploads/profiles/{{user.profile.photo}}" alt="Profile Photo" class="profile-photo" id="profile-photo-preview">
+                    {{else}}
+                    <div class="profile-photo-placeholder" id="profile-photo-placeholder">
+                        <i class='bx bx-user'></i>
+                    </div>
+                    {{/if}}
+                </div>
+                
+                <form id="photo-upload-form" action="/upload-photo" method="POST" enctype="multipart/form-data">
+                    <input type="file" id="photo-upload" name="photo" accept="image/*" style="display: none;">
+                    <button type="button" class="photo-upload-btn" id="photo-select-btn">
+                        <i class='bx bx-upload'></i> {{#if user.profile.photo}}Change{{else}}Upload{{/if}} Photo
+                    </button>
+                    <div class="selected-file-info" id="selected-file-info"></div>
+                    <button type="submit" class="upload-btn" id="submit-photo-btn" style="display: none;">Save Photo</button>
+                </form>
+            </div>
+
+            <!-- Enhanced Profile Form -->
+            <form class="profile-form" id="profile-form" action="{{#if editing}}/update-profile{{else}}/create-profile{{/if}}" method="POST">
+                <h2><i class='bx bx-user-circle'></i> Personal Information</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">First Name</label>
+                        <input type="text" id="firstName" name="firstName" placeholder="Enter your first name" value="{{#if user.profile.firstName}}{{user.profile.firstName}}{{/if}}" required>
+                        <div class="field-error" id="firstName-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lastName">Last Name</label>
+                        <input type="text" id="lastName" name="lastName" placeholder="Enter your last name" value="{{#if user.profile.lastName}}{{user.profile.lastName}}{{/if}}" required>
+                        <div class="field-error" id="lastName-error"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="gender">Gender</label>
+                        <select id="gender" name="gender" required>
+                            <option value="" disabled {{#unless user.profile.gender}}selected{{/unless}}>Select gender</option>
+                            <option value="male" {{#if_eq user.profile.gender "male"}}selected{{/if_eq}}>Male</option>
+                            <option value="female" {{#if_eq user.profile.gender "female"}}selected{{/if_eq}}>Female</option>
+                            <option value="non-binary" {{#if_eq user.profile.gender "non-binary"}}selected{{/if_eq}}>Non-binary</option>
+                            <option value="prefer-not-to-say" {{#if_eq user.profile.gender "prefer-not-to-say"}}selected{{/if_eq}}>Prefer not to say</option>
+                        </select>
+                        <div class="field-error" id="gender-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="birthday">Birthday</label>
+                        <div class="date-picker-wrapper">
+                            <i class='bx bx-calendar'></i>
+                            <input type="date" id="birthday" name="birthday" placeholder="Select your birthday" value="{{#if user.profile.birthday}}{{formatDateForInput user.profile.birthday}}{{/if}}">
+                        </div>
+                        <div class="field-error" id="birthday-error"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nationality">Nationality</label>
+                        <div class="select-wrapper">
+                            <select id="nationality" name="nationality" required>
+                                <option value="" disabled {{#unless user.profile.nationality}}selected{{/unless}}>Select your nationality</option>
+                                <option value="Taiwan" {{#if_eq user.profile.nationality "Taiwan"}}selected{{/if_eq}}>Taiwan 🇹🇼</option>
+                                <option value="United States" {{#if_eq user.profile.nationality "United States"}}selected{{/if_eq}}>United States 🇺🇸</option>
+                                <option value="Japan" {{#if_eq user.profile.nationality "Japan"}}selected{{/if_eq}}>Japan 🇯🇵</option>
+                                <option value="China" {{#if_eq user.profile.nationality "China"}}selected{{/if_eq}}>China 🇨🇳</option>
+                                <option value="South Korea" {{#if_eq user.profile.nationality "South Korea"}}selected{{/if_eq}}>South Korea 🇰🇷</option>
+                                <option value="United Kingdom" {{#if_eq user.profile.nationality "United Kingdom"}}selected{{/if_eq}}>United Kingdom 🇬🇧</option>
+                                <option value="Canada" {{#if_eq user.profile.nationality "Canada"}}selected{{/if_eq}}>Canada 🇨🇦</option>
+                                <option value="Australia" {{#if_eq user.profile.nationality "Australia"}}selected{{/if_eq}}>Australia 🇦🇺</option>
+                                <option value="Germany" {{#if_eq user.profile.nationality "Germany"}}selected{{/if_eq}}>Germany 🇩🇪</option>
+                                <option value="France" {{#if_eq user.profile.nationality "France"}}selected{{/if_eq}}>France 🇫🇷</option>
+                                <option value="India" {{#if_eq user.profile.nationality "India"}}selected{{/if_eq}}>India 🇮🇳</option>
+                                <option value="Indonesia" {{#if_eq user.profile.nationality "Indonesia"}}selected{{/if_eq}}>Indonesia 🇮🇩</option>
+                                <option value="Malaysia" {{#if_eq user.profile.nationality "Malaysia"}}selected{{/if_eq}}>Malaysia 🇲🇾</option>
+                                <option value="Philippines" {{#if_eq user.profile.nationality "Philippines"}}selected{{/if_eq}}>Philippines 🇵🇭</option>
+                                <option value="Singapore" {{#if_eq user.profile.nationality "Singapore"}}selected{{/if_eq}}>Singapore 🇸🇬</option>
+                                <option value="Thailand" {{#if_eq user.profile.nationality "Thailand"}}selected{{/if_eq}}>Thailand 🇹🇭</option>
+                                <option value="Vietnam" {{#if_eq user.profile.nationality "Vietnam"}}selected{{/if_eq}}>Vietnam 🇻🇳</option>
+                                <option value="Hong Kong" {{#if_eq user.profile.nationality "Hong Kong"}}selected{{/if_eq}}>Hong Kong 🇭🇰</option>
+                                <option value="Brazil" {{#if_eq user.profile.nationality "Brazil"}}selected{{/if_eq}}>Brazil 🇧🇷</option>
+                                <option value="Mexico" {{#if_eq user.profile.nationality "Mexico"}}selected{{/if_eq}}>Mexico 🇲🇽</option>
+                                <option value="Spain" {{#if_eq user.profile.nationality "Spain"}}selected{{/if_eq}}>Spain 🇪🇸</option>
+                                <option value="Italy" {{#if_eq user.profile.nationality "Italy"}}selected{{/if_eq}}>Italy 🇮🇹</option>
+                                <option value="Netherlands" {{#if_eq user.profile.nationality "Netherlands"}}selected{{/if_eq}}>Netherlands 🇳🇱</option>
+                                <option value="Russia" {{#if_eq user.profile.nationality "Russia"}}selected{{/if_eq}}>Russia 🇷🇺</option>
+                                <option value="Saudi Arabia" {{#if_eq user.profile.nationality "Saudi Arabia"}}selected{{/if_eq}}>Saudi Arabia 🇸🇦</option>
+                                <option value="Other" {{#if_eq user.profile.nationality "Other"}}selected{{/if_eq}}>Other</option>
+                            </select>
+                        </div>
+                        <div class="field-error" id="nationality-error"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="domicile">Current City</label>
+                        <div class="select-wrapper">
+                            <select id="domicile" name="domicile" required>
+                                <option value="" disabled {{#unless user.profile.domicile}}selected{{/unless}}>Select your current city</option>
+                                <option value="Taipei" {{#if_eq user.profile.domicile "Taipei"}}selected{{/if_eq}}>Taipei (臺北市)</option>
+                                <option value="New Taipei" {{#if_eq user.profile.domicile "New Taipei"}}selected{{/if_eq}}>New Taipei (新北市)</option>
+                                <option value="Taoyuan" {{#if_eq user.profile.domicile "Taoyuan"}}selected{{/if_eq}}>Taoyuan (桃園市)</option>
+                                <option value="Taichung" {{#if_eq user.profile.domicile "Taichung"}}selected{{/if_eq}}>Taichung (臺中市)</option>
+                                <option value="Tainan" {{#if_eq user.profile.domicile "Tainan"}}selected{{/if_eq}}>Tainan (臺南市)</option>
+                                <option value="Kaohsiung" {{#if_eq user.profile.domicile "Kaohsiung"}}selected{{/if_eq}}>Kaohsiung (高雄市)</option>
+                                <option value="Keelung" {{#if_eq user.profile.domicile "Keelung"}}selected{{/if_eq}}>Keelung (基隆市)</option>
+                                <option value="Hsinchu City" {{#if_eq user.profile.domicile "Hsinchu City"}}selected{{/if_eq}}>Hsinchu City (新竹市)</option>
+                                <option value="Hsinchu County" {{#if_eq user.profile.domicile "Hsinchu County"}}selected{{/if_eq}}>Hsinchu County (新竹縣)</option>
+                                <option value="Miaoli" {{#if_eq user.profile.domicile "Miaoli"}}selected{{/if_eq}}>Miaoli (苗栗縣)</option>
+                                <option value="Changhua" {{#if_eq user.profile.domicile "Changhua"}}selected{{/if_eq}}>Changhua (彰化縣)</option>
+                                <option value="Nantou" {{#if_eq user.profile.domicile "Nantou"}}selected{{/if_eq}}>Nantou (南投縣)</option>
+                                <option value="Yunlin" {{#if_eq user.profile.domicile "Yunlin"}}selected{{/if_eq}}>Yunlin (雲林縣)</option>
+                                <option value="Chiayi City" {{#if_eq user.profile.domicile "Chiayi City"}}selected{{/if_eq}}>Chiayi City (嘉義市)</option>
+                                <option value="Chiayi County" {{#if_eq user.profile.domicile "Chiayi County"}}selected{{/if_eq}}>Chiayi County (嘉義縣)</option>
+                                <option value="Pingtung" {{#if_eq user.profile.domicile "Pingtung"}}selected{{/if_eq}}>Pingtung (屏東縣)</option>
+                                <option value="Yilan" {{#if_eq user.profile.domicile "Yilan"}}selected{{/if_eq}}>Yilan (宜蘭縣)</option>
+                                <option value="Hualien" {{#if_eq user.profile.domicile "Hualien"}}selected{{/if_eq}}>Hualien (花蓮縣)</option>
+                                <option value="Taitung" {{#if_eq user.profile.domicile "Taitung"}}selected{{/if_eq}}>Taitung (臺東縣)</option>
+                                <option value="Penghu" {{#if_eq user.profile.domicile "Penghu"}}selected{{/if_eq}}>Penghu (澎湖縣)</option>
+                                <option value="Kinmen" {{#if_eq user.profile.domicile "Kinmen"}}selected{{/if_eq}}>Kinmen (金門縣)</option>
+                                <option value="Lienchiang" {{#if_eq user.profile.domicile "Lienchiang"}}selected{{/if_eq}}>Lienchiang (連江縣)</option>
+                                <option value="Other" {{#if_eq user.profile.domicile "Other"}}selected{{/if_eq}}>Other</option>
+                            </select>
+                        </div>
+                        <div class="field-error" id="domicile-error"></div>
+                    </div>
+                </div>
+
+                <fieldset>
+                    <legend><i class='bx bx-book-alt'></i> Academic Information</legend>
+                    <div class="form-group full-width">
+                        <label for="university">University</label>
+                        <div class="select-wrapper">
+                            <select id="university" name="university" required>
+                                <option value="" disabled {{#unless user.profile.university}}selected{{/unless}}>Select your university</option>
+                                <!-- Top Universities -->
+                                <option value="National Taiwan University" {{#if_eq user.profile.university "National Taiwan University"}}selected{{/if_eq}}>National Taiwan University (國立臺灣大學)</option>
+                                <option value="National Cheng Kung University" {{#if_eq user.profile.university "National Cheng Kung University"}}selected{{/if_eq}}>National Cheng Kung University (國立成功大學)</option>
+                                <option value="National Tsing Hua University" {{#if_eq user.profile.university "National Tsing Hua University"}}selected{{/if_eq}}>National Tsing Hua University (國立清華大學)</option>
+                                <option value="National Taiwan Normal University" {{#if_eq user.profile.university "National Taiwan Normal University"}}selected{{/if_eq}}>National Taiwan Normal University (國立臺灣師範大學)</option>
+                                <option value="National Chengchi University" {{#if_eq user.profile.university "National Chengchi University"}}selected{{/if_eq}}>National Chengchi University (國立政治大學)</option>
+                                <option value="National Yang Ming Chiao Tung University" {{#if_eq user.profile.university "National Yang Ming Chiao Tung University"}}selected{{/if_eq}}>National Yang Ming Chiao Tung University (國立陽明交通大學)</option>
+                                <option value="National Taiwan University of Science and Technology" {{#if_eq user.profile.university "National Taiwan University of Science and Technology"}}selected{{/if_eq}}>National Taiwan University of Science and Technology (國立臺灣科技大學)</option>
+                                <!-- More National Universities -->
+                                <option value="National Sun Yat-sen University" {{#if_eq user.profile.university "National Sun Yat-sen University"}}selected{{/if_eq}}>National Sun Yat-sen University (國立中山大學)</option>
+                                <option value="National Central University" {{#if_eq user.profile.university "National Central University"}}selected{{/if_eq}}>National Central University (國立中央大學)</option>
+                                <option value="National Chung Hsing University" {{#if_eq user.profile.university "National Chung Hsing University"}}selected{{/if_eq}}>National Chung Hsing University (國立中興大學)</option>
+                                <option value="National Taipei University" {{#if_eq user.profile.university "National Taipei University"}}selected{{/if_eq}}>National Taipei University (國立臺北大學)</option>
+                                <option value="National Chiayi University" {{#if_eq user.profile.university "National Chiayi University"}}selected{{/if_eq}}>National Chiayi University (國立嘉義大學)</option>
+                                <option value="National Dong Hwa University" {{#if_eq user.profile.university "National Dong Hwa University"}}selected{{/if_eq}}>National Dong Hwa University (國立東華大學)</option>
+                                <option value="National Yunlin University of Science and Technology" {{#if_eq user.profile.university "National Yunlin University of Science and Technology"}}selected{{/if_eq}}>National Yunlin University of Science and Technology (國立雲林科技大學)</option>
+                                <option value="National Taiwan Ocean University" {{#if_eq user.profile.university "National Taiwan Ocean University"}}selected{{/if_eq}}>National Taiwan Ocean University (國立臺灣海洋大學)</option>
+                                <option value="National Kaohsiung University" {{#if_eq user.profile.university "National Kaohsiung University"}}selected{{/if_eq}}>National Kaohsiung University (國立高雄大學)</option>
+                                <option value="National Changhua University of Education" {{#if_eq user.profile.university "National Changhua University of Education"}}selected{{/if_eq}}>National Changhua University of Education (國立彰化師範大學)</option>
+                                <option value="National Taipei University of Education" {{#if_eq user.profile.university "National Taipei University of Education"}}selected{{/if_eq}}>National Taipei University of Education (國立臺北教育大學)</option>
+                                <option value="National Taiwan University of Arts" {{#if_eq user.profile.university "National Taiwan University of Arts"}}selected{{/if_eq}}>National Taiwan University of Arts (國立臺灣藝術大學)</option>
+                                <option value="National Taipei University of Technology" {{#if_eq user.profile.university "National Taipei University of Technology"}}selected{{/if_eq}}>National Taipei University of Technology (國立臺北科技大學)</option>
+                                <!-- Private Universities -->
+                                <option value="Fu Jen Catholic University" {{#if_eq user.profile.university "Fu Jen Catholic University"}}selected{{/if_eq}}>Fu Jen Catholic University (輔仁大學)</option>
+                                <option value="Tamkang University" {{#if_eq user.profile.university "Tamkang University"}}selected{{/if_eq}}>Tamkang University (淡江大學)</option>
+                                <option value="Soochow University" {{#if_eq user.profile.university "Soochow University"}}selected{{/if_eq}}>Soochow University (東吳大學)</option>
+                                <option value="Tunghai University" {{#if_eq user.profile.university "Tunghai University"}}selected{{/if_eq}}>Tunghai University (東海大學)</option>
+                                <option value="Chinese Culture University" {{#if_eq user.profile.university "Chinese Culture University"}}selected{{/if_eq}}>Chinese Culture University (中國文化大學)</option>
+                                <option value="Feng Chia University" {{#if_eq user.profile.university "Feng Chia University"}}selected{{/if_eq}}>Feng Chia University (逢甲大學)</option>
+                                <option value="Shih Hsin University" {{#if_eq user.profile.university "Shih Hsin University"}}selected{{/if_eq}}>Shih Hsin University (世新大學)</option>
+                                <option value="Ming Chuan University" {{#if_eq user.profile.university "Ming Chuan University"}}selected{{/if_eq}}>Ming Chuan University (銘傳大學)</option>
+                                <option value="I-Shou University" {{#if_eq user.profile.university "I-Shou University"}}selected{{/if_eq}}>I-Shou University (義守大學)</option>
+                                <option value="Chung Yuan Christian University" {{#if_eq user.profile.university "Chung Yuan Christian University"}}selected{{/if_eq}}>Chung Yuan Christian University (中原大學)</option>
+                                <option value="Taipei Medical University" {{#if_eq user.profile.university "Taipei Medical University"}}selected{{/if_eq}}>Taipei Medical University (臺北醫學大學)</option>
+                                <option value="Chang Gung University" {{#if_eq user.profile.university "Chang Gung University"}}selected{{/if_eq}}>Chang Gung University (長庚大學)</option>
+                                <option value="Other" {{#if_eq user.profile.university "Other"}}selected{{/if_eq}}>Other</option>
+                            </select>
+                        </div>
+                        <div class="field-error" id="university-error"></div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="major">Major</label>
+                            <div class="select-wrapper">
+                                <select id="major" name="major" required>
+                                    <option value="" disabled {{#unless user.profile.major}}selected{{/unless}}>Select your major</option>
+                                    <!-- Engineering -->
+                                    <option value="Computer Science" {{#if_eq user.profile.major "Computer Science"}}selected{{/if_eq}}>Computer Science</option>
+                                    <option value="Computer Engineering" {{#if_eq user.profile.major "Computer Engineering"}}selected{{/if_eq}}>Computer Engineering</option>
+                                    <option value="Information Technology" {{#if_eq user.profile.major "Information Technology"}}selected{{/if_eq}}>Information Technology</option>
+                                    <option value="Electrical Engineering" {{#if_eq user.profile.major "Electrical Engineering"}}selected{{/if_eq}}>Electrical Engineering</option>
+                                    <option value="Mechanical Engineering" {{#if_eq user.profile.major "Mechanical Engineering"}}selected{{/if_eq}}>Mechanical Engineering</option>
+                                    <option value="Civil Engineering" {{#if_eq user.profile.major "Civil Engineering"}}selected{{/if_eq}}>Civil Engineering</option>
+                                    <option value="Chemical Engineering" {{#if_eq user.profile.major "Chemical Engineering"}}selected{{/if_eq}}>Chemical Engineering</option>
+                                    <option value="Aerospace Engineering" {{#if_eq user.profile.major "Aerospace Engineering"}}selected{{/if_eq}}>Aerospace Engineering</option>
+                                    <option value="Biomedical Engineering" {{#if_eq user.profile.major "Biomedical Engineering"}}selected{{/if_eq}}>Biomedical Engineering</option>
+                                    <!-- Business -->
+                                    <option value="Business Administration" {{#if_eq user.profile.major "Business Administration"}}selected{{/if_eq}}>Business Administration</option>
+                                    <option value="Finance" {{#if_eq user.profile.major "Finance"}}selected{{/if_eq}}>Finance</option>
+                                    <option value="Accounting" {{#if_eq user.profile.major "Accounting"}}selected{{/if_eq}}>Accounting</option>
+                                    <option value="Marketing" {{#if_eq user.profile.major "Marketing"}}selected{{/if_eq}}>Marketing</option>
+                                    <option value="International Business" {{#if_eq user.profile.major "International Business"}}selected{{/if_eq}}>International Business</option>
+                                    <option value="Economics" {{#if_eq user.profile.major "Economics"}}selected{{/if_eq}}>Economics</option>
+                                    <option value="Human Resources" {{#if_eq user.profile.major "Human Resources"}}selected{{/if_eq}}>Human Resources</option>
+                                    <!-- Science -->
+                                    <option value="Physics" {{#if_eq user.profile.major "Physics"}}selected{{/if_eq}}>Physics</option>
+                                    <option value="Chemistry" {{#if_eq user.profile.major "Chemistry"}}selected{{/if_eq}}>Chemistry</option>
+                                    <option value="Biology" {{#if_eq user.profile.major "Biology"}}selected{{/if_eq}}>Biology</option>
+                                    <option value="Mathematics" {{#if_eq user.profile.major "Mathematics"}}selected{{/if_eq}}>Mathematics</option>
+                                    <option value="Environmental Science" {{#if_eq user.profile.major "Environmental Science"}}selected{{/if_eq}}>Environmental Science</option>
+                                    <option value="Data Science" {{#if_eq user.profile.major "Data Science"}}selected{{/if_eq}}>Data Science</option>
+                                    <option value="Statistics" {{#if_eq user.profile.major "Statistics"}}selected{{/if_eq}}>Statistics</option>
+                                    <!-- Medicine and Health -->
+                                    <option value="Medicine" {{#if_eq user.profile.major "Medicine"}}selected{{/if_eq}}>Medicine</option>
+                                    <option value="Nursing" {{#if_eq user.profile.major "Nursing"}}selected{{/if_eq}}>Nursing</option>
+                                    <option value="Pharmacy" {{#if_eq user.profile.major "Pharmacy"}}selected{{/if_eq}}>Pharmacy</option>
+                                    <option value="Public Health" {{#if_eq user.profile.major "Public Health"}}selected{{/if_eq}}>Public Health</option>
+                                    <option value="Psychology" {{#if_eq user.profile.major "Psychology"}}selected{{/if_eq}}>Psychology</option>
+                                    <!-- Humanities and Social Sciences -->
+                                    <option value="Sociology" {{#if_eq user.profile.major "Sociology"}}selected{{/if_eq}}>Sociology</option>
+                                    <option value="Political Science" {{#if_eq user.profile.major "Political Science"}}selected{{/if_eq}}>Political Science</option>
+                                    <option value="History" {{#if_eq user.profile.major "History"}}selected{{/if_eq}}>History</option>
+                                    <option value="Philosophy" {{#if_eq user.profile.major "Philosophy"}}selected{{/if_eq}}>Philosophy</option>
+                                    <option value="Literature" {{#if_eq user.profile.major "Literature"}}selected{{/if_eq}}>Literature</option>
+                                    <option value="Communications" {{#if_eq user.profile.major "Communications"}}selected{{/if_eq}}>Communications</option>
+                                    <option value="Journalism" {{#if_eq user.profile.major "Journalism"}}selected{{/if_eq}}>Journalism</option>
+                                    <option value="Education" {{#if_eq user.profile.major "Education"}}selected{{/if_eq}}>Education</option>
+                                    <option value="Foreign Languages" {{#if_eq user.profile.major "Foreign Languages"}}selected{{/if_eq}}>Foreign Languages</option>
+                                    <!-- Others -->
+                                    <option value="Law" {{#if_eq user.profile.major "Law"}}selected{{/if_eq}}>Law</option>
+                                    <option value="Architecture" {{#if_eq user.profile.major "Architecture"}}selected{{/if_eq}}>Architecture</option>
+                                    <option value="Design" {{#if_eq user.profile.major "Design"}}selected{{/if_eq}}>Design</option>
+                                    <option value="Fine Arts" {{#if_eq user.profile.major "Fine Arts"}}selected{{/if_eq}}>Fine Arts</option>
+                                    <option value="Music" {{#if_eq user.profile.major "Music"}}selected{{/if_eq}}>Music</option>
+                                    <option value="Film and Media Studies" {{#if_eq user.profile.major "Film and Media Studies"}}selected{{/if_eq}}>Film and Media Studies</option>
+                                    <option value="Agriculture" {{#if_eq user.profile.major "Agriculture"}}selected{{/if_eq}}>Agriculture</option>
+                                    <option value="Hospitality Management" {{#if_eq user.profile.major "Hospitality Management"}}selected{{/if_eq}}>Hospitality Management</option>
+                                    <option value="Tourism" {{#if_eq user.profile.major "Tourism"}}selected{{/if_eq}}>Tourism</option>
+                                    <option value="Other" {{#if_eq user.profile.major "Other"}}selected{{/if_eq}}>Other</option>
+                                </select>
+                            </div>
+                            <div class="field-error" id="major-error"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="yearOfStudy">Year of Study</label>
+                            <select id="yearOfStudy" name="yearOfStudy" required>
+                                <option value="" disabled {{#unless user.profile.yearOfStudy}}selected{{/unless}}>Select Year</option>
+                                <option value="1" {{#if_eq user.profile.yearOfStudy "1"}}selected{{/if_eq}}>First Year</option>
+                                <option value="2" {{#if_eq user.profile.yearOfStudy "2"}}selected{{/if_eq}}>Second Year</option>
+                                <option value="3" {{#if_eq user.profile.yearOfStudy "3"}}selected{{/if_eq}}>Third Year</option>
+                                <option value="4" {{#if_eq user.profile.yearOfStudy "4"}}selected{{/if_eq}}>Fourth Year</option>
+                                <option value="5+" {{#if_eq user.profile.yearOfStudy "5+"}}selected{{/if_eq}}>Graduate Student</option>
+                                <option value="exchange" {{#if_eq user.profile.yearOfStudy "exchange"}}selected{{/if_eq}}>Exchange Student</option>
+                            </select>
+                            <div class="field-error" id="yearOfStudy-error"></div>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <h2><i class='bx bx-message-square-detail'></i> About You</h2>
+                
+                <div class="form-group full-width">
+                    <label for="bio">Bio</label>
+                    <textarea id="bio" name="bio" placeholder="Tell others about yourself..." rows="4">{{#if user.profile.bio}}{{user.profile.bio}}{{/if}}</textarea>
+                    <div class="char-counter"><span id="char-count">0</span>/500 characters</div>
+                    <div class="field-error" id="bio-error"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary submit-btn">
+                        {{#if editing}}Save Changes{{else}}Create Profile{{/if}}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>CampusMatch © 2024</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Enhanced JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+    $(document).ready(function() {
+        // Debug information
+        $('#debugPanel').append('<div class="debug-log success">jQuery loaded successfully</div>');
+        $('#debugPanel').append('<div class="debug-log">Initializing profile page...</div>');
+        
+        try {
+            // Initialize Select2 for better dropdown experience
+            $('#nationality, #university, #major, #domicile').select2({
+                placeholder: "Select an option",
+                allowClear: true,
+                width: '100%'
+            });
+            $('#debugPanel').append('<div class="debug-log success">Select2 initialized</div>');
+            
+            // Initialize date picker for birthday
+            flatpickr("#birthday", {
+                dateFormat: "Y-m-d",
+                maxDate: new Date().fp_incr(-18 * 365), // 18 years ago
+                disableMobile: true
+            });
+            $('#debugPanel').append('<div class="debug-log success">Date picker initialized</div>');
+        } catch (e) {
+            $('#debugPanel').append('<div class="debug-log error">Error initializing UI components: ' + e.message + '</div>');
+        }
+        
+        // Character counter for bio
+        const updateCharCount = function() {
+            const count = $('#bio').val().length;
+            $('#char-count').text(count);
+            
+            if (count > 500) {
+                $('#char-count').css('color', 'red');
+            } else {
+                $('#char-count').css('color', '');
+            }
+        };
+        
+        $('#bio').on('input', updateCharCount);
+        
+        // Initialize character count
+        updateCharCount();
+        
+        // Photo upload handling
+        $('#photo-select-btn').on('click', function() {
+            $('#photo-upload').click();
+        });
+        
+        $('#photo-upload').on('change', function(e) {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                
+                // Validate file type
+                if (!file.type.match('image.*')) {
+                    $('#selected-file-info').text('Please select an image file').css('color', 'red').show();
+                    return;
+                }
+                
+                // Validate file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    $('#selected-file-info').text('File too large (max 5MB)').css('color', 'red').show();
+                    return;
+                }
+                
+                // Show selected file info
+                $('#selected-file-info').text('Selected: ' + file.name).css('color', '').show();
+                $('#submit-photo-btn').show();
+                
+                // Show preview
+                if (FileReader) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        if ($('#profile-photo-preview').length) {
+                            $('#profile-photo-preview').attr('src', e.target.result).addClass('preview-animation');
+                        } else {
+                            $('#profile-photo-placeholder').hide();
+                            $('<img>', {
+                                src: e.target.result,
+                                id: 'profile-photo-preview',
+                                class: 'profile-photo preview-animation'
+                            }).appendTo('.profile-photo-container');
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+                
+                $('#debugPanel').append('<div class="debug-log">Photo selected: ' + file.name + '</div>');
+            }
+        });
+        
+        // Auto-submit photo form when selecting a file (optional)
+        $('#photo-upload').on('change', function() {
+            if ($(this).val()) {
+                $('#photo-upload-form').submit();
+            }
+        });
+        
+        // Form validation
+        $('#profile-form').on('submit', function(e) {
+            let isValid = true;
+            const isEditing = {{#if editing}}true{{else}}false{{/if}};
+            
+            // Reset errors
+            $('.field-error').text('');
+            $('input, select, textarea').removeClass('error-field');
+            
+            // Validate first name
+            if (!$('#firstName').val().trim()) {
+                $('#firstName-error').text('First name is required');
+                $('#firstName').addClass('error-field');
+                isValid = false;
+            }
+            
+            // Validate last name
+            if (!$('#lastName').val().trim()) {
+                $('#lastName-error').text('Last name is required');
+                $('#lastName').addClass('error-field');
+                isValid = false;
+            }
+            
+            // In create mode, validate all required fields
+            // In edit mode, only validate fields that have been changed
+            if (!isEditing) {
+                // Validate gender
+                if (!$('#gender').val()) {
+                    $('#gender-error').text('Please select your gender');
+                    $('#gender').addClass('error-field');
+                    isValid = false;
+                }
+                
+                // Validate nationality
+                if (!$('#nationality').val()) {
+                    $('#nationality-error').text('Please select your nationality');
+                    $('#nationality').addClass('error-field');
+                    isValid = false;
+                }
+                
+                // Validate domicile
+                if (!$('#domicile').val()) {
+                    $('#domicile-error').text('Please select your current city');
+                    $('#domicile').addClass('error-field');
+                    isValid = false;
+                }
+                
+                // Validate university
+                if (!$('#university').val()) {
+                    $('#university-error').text('Please select your university');
+                    $('#university').addClass('error-field');
+                    isValid = false;
+                }
+                
+                // Validate major
+                if (!$('#major').val()) {
+                    $('#major-error').text('Please select your major');
+                    $('#major').addClass('error-field');
+                    isValid = false;
+                }
+                
+                // Validate year of study
+                if (!$('#yearOfStudy').val()) {
+                    $('#yearOfStudy-error').text('Please select your year of study');
+                    $('#yearOfStudy').addClass('error-field');
+                    isValid = false;
+                }
+            }
+            
+            // Validate bio length (always check)
+            if ($('#bio').val().length > 500) {
+                $('#bio-error').text('Bio must be 500 characters or less');
+                $('#bio').addClass('error-field');
+                isValid = false;
+            }
+            
+            // Validate birthday (if provided)
+            if ($('#birthday').val()) {
+                const birthDate = new Date($('#birthday').val());
+                const today = new Date();
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const m = today.getMonth() - birthDate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+                
+                if (age < 18) {
+                    $('#birthday-error').text('You must be at least 18 years old');
+                    $('#birthday').addClass('error-field');
+                    isValid = false;
+                }
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                $('#debugPanel').append('<div class="debug-log error">Form validation failed</div>');
+                
+                // Scroll to first error
+                const firstError = $('.field-error').filter(function() {
+                    return $(this).text() !== '';
+                }).first();
+                
+                if (firstError.length) {
+                    $('html, body').animate({
+                        scrollTop: firstError.offset().top - 100
+                    }, 500);
+                }
+                return false;
+            }
+            
+            $('#debugPanel').append('<div class="debug-log success">Form validated successfully</div>');
+            return true;
+        });
+        
+        // Final initialization log
+        $('#debugPanel').append('<div class="debug-log success">Profile page initialized successfully</div>');
+    });
+    </script>
+</body>
+</html>

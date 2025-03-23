@@ -1,0 +1,1089 @@
+/* Profile Page Styles */
+:root {
+    --primary: #4F46E5;
+    --primary-dark: #4338CA;
+    --primary-light: rgba(79, 70, 229, 0.1);
+    --secondary: #EC4899;
+    --background: #F9FAFB;
+    --background-alt: #F3F4F6;
+    --text: #111827;
+    --text-light: #6B7280;
+    --text-lighter: #9CA3AF;
+    --white: #FFFFFF;
+    --border: #E5E7EB;
+    --success: #10B981;
+    --error: #EF4444;
+    --gradient: linear-gradient(135deg, var(--primary), var(--secondary));
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 1rem;
+    --radius-full: 9999px;
+    --transition: all 0.3s ease;
+}
+
+/* Base Styles */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text);
+    background-color: var(--background);
+    line-height: 1.6;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* Navigation */
+.navbar {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+    padding: 1rem 0;
+    box-shadow: var(--shadow-sm);
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+.nav-logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-decoration: none;
+}
+
+.nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border);
+    transition: var(--transition);
+}
+
+.nav-btn:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.nav-btn i {
+    font-size: 1.25rem;
+}
+
+/* Profile Container */
+.profile-container {
+    max-width: 800px;
+    margin: 7rem auto 4rem;
+    padding: 0 1.5rem;
+}
+
+.profile-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.profile-header h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+}
+
+.profile-header p {
+    color: var(--text-light);
+    font-size: 1.125rem;
+}
+
+.profile-content {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+/* Photo Section */
+.photo-section {
+    padding: 2rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.photo-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text);
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.photo-section h2 i {
+    color: var(--primary);
+}
+
+.photo-uploader {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.current-photo {
+    flex-shrink: 0;
+}
+
+.profile-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary-light);
+}
+
+.photo-upload-form {
+    flex: 1;
+}
+
+/* Error Notifications */
+.notification {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.notification.error {
+    background-color: #FEE2E2;
+    border: 1px solid #FECACA;
+    border-left: 4px solid #EF4444;
+    color: #B91C1C;
+}
+
+.notification.success {
+    background-color: #D1FAE5;
+    border: 1px solid #A7F3D0;
+    border-left: 4px solid #10B981;
+    color: #065F46;
+}
+
+.notification i {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.notification span {
+    flex: 1;
+    font-size: 0.875rem;
+}
+
+.close-notification {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.close-notification:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.close-notification i {
+    font-size: 1.25rem;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.file-upload {
+    margin-bottom: 1rem;
+}
+
+.file-upload-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 0.625rem 1.25rem;
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.file-upload-label:hover {
+    background: var(--primary);
+    color: var(--white);
+}
+
+.file-upload-input {
+    display: none;
+}
+
+.selected-file-name {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-light);
+}
+
+.upload-btn {
+    background: var(--primary);
+    color: var(--white);
+    border: none;
+    padding: 0.625rem 1.25rem;
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.upload-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+/* Profile Form */
+.profile-form {
+    padding: 2rem;
+}
+
+.profile-form h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text);
+    font-size: 1.25rem;
+    margin: 1.5rem 0 1.25rem;
+}
+
+.profile-form h2:first-of-type {
+    margin-top: 0;
+}
+
+.profile-form h2 i {
+    color: var(--primary);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    width: 100%;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+}
+
+input[type="text"],
+select,
+textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    transition: var(--transition);
+    background-color: var(--white);
+}
+
+input[type="text"]:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.char-counter {
+    display: flex;
+    justify-content: flex-end;
+    font-size: 0.75rem;
+    color: var(--text-lighter);
+    margin-top: 0.25rem;
+}
+
+.char-counter .exceeded {
+    color: var(--error);
+}
+
+.form-actions {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+}
+
+.submit-btn {
+    background: var(--gradient);
+    color: var(--white);
+    border: none;
+    padding: 0.875rem 2rem;
+    border-radius: var(--radius-full);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+/* Searchable Select Styles */
+.select-wrapper {
+    position: relative;
+}
+
+.select-wrapper i {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.searchable-select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background-color: var(--white);
+    font-size: 1rem;
+    color: var(--text);
+    appearance: none;
+    -webkit-appearance: none;
+    transition: var(--transition);
+}
+
+.searchable-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.searchable-select option {
+    padding: 10px;
+}
+
+/* Select2 Styling - FIXED */
+/* Select2 Styling - Enhanced */
+.select2-container {
+    width: 100% !important;
+    z-index: 100;
+}
+
+.select2-container--default .select2-selection--single {
+    height: auto !important;
+    padding: 0.75rem 1rem !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-md) !important;
+    background-color: var(--white) !important;
+    font-size: 1rem !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: normal !important;
+    padding: 0 !important;
+    color: var(--text) !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 100% !important;
+    top: 0 !important;
+    right: 10px !important;
+}
+
+/* Better dropdown styling */
+.select2-dropdown {
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    z-index: 9999 !important;
+}
+
+.select2-search--dropdown {
+    padding: 10px !important;
+}
+
+.select2-search--dropdown .select2-search__field {
+    padding: 8px !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-sm) !important;
+}
+
+.select2-search--dropdown .select2-search__field:focus {
+    outline: none !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 2px var(--primary-light) !important;
+}
+
+.select2-results__option {
+    padding: 8px 12px !important;
+    transition: background-color 0.2s ease !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    background-color: transparent !important;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--primary) !important;
+    color: white !important;
+}
+
+/* Ensure dropdown appears above other elements */
+.select2-container--open .select2-dropdown {
+    z-index: 9999 !important;
+    min-width: 250px !important;
+}
+
+/* Enhanced nationality dropdown with flags */
+.select2-results__option.country-option,
+.select2-results__option {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+.country-flag {
+    font-size: 1.25rem !important;
+    line-height: 1 !important;
+    display: inline-block !important;
+    margin-right: 0.5rem !important;
+    flex-shrink: 0 !important;
+    width: 1.5rem !important;
+    text-align: center !important;
+}
+
+.country-name {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+}
+
+.selected-country {
+    display: flex !important;
+    align-items: center !important;
+}
+
+.selected-country .country-flag {
+    margin-right: 8px !important;
+}
+
+/* Enhanced university dropdown */
+.university-option {
+    padding: 8px 12px !important;
+}
+
+.university-option .english-name {
+    font-weight: 500 !important;
+}
+
+.university-option .chinese-name {
+    font-size: 0.9rem !important;
+    color: #666 !important;
+    margin-top: 2px !important;
+}
+
+/* Fix for residence dropdowns layout */
+.residence-selection {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.75rem !important;
+    width: 100% !important;
+    position: relative !important;
+}
+
+.residence-dropdown {
+    width: 100% !important;
+    position: relative !important;
+}
+
+/* Global fixes to prevent cut-off */
+.form-group, .residence-dropdown {
+    position: relative !important;
+}
+
+/* Add a specific z-index stacking context */
+body.has-select2-dropdown {
+    /* Prevent any potential scrolling issues */
+    overflow-x: hidden !important;
+}
+
+/* Make sure the dropdown is never cut off at the bottom */
+.select2-container--default .select2-results > .select2-results__options {
+    max-height: 300px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+/* Fix for selected flags in nationality dropdown */
+.select2-selection__rendered.with-flag {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+/* Fix for disabled selects */
+.select2-container--disabled .select2-selection--single {
+    background-color: var(--background-alt) !important;
+    cursor: not-allowed !important;
+    opacity: 0.7 !important;
+}
+
+/* Better mobile experience for dropdowns */
+@media (max-width: 768px) {
+    .residence-selection {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .select2-dropdown {
+        width: calc(100vw - 40px) !important;
+        max-width: 100% !important;
+    }
+}
+
+/* Make sure all dropdowns use consistent styling */
+#nationality + .select2,
+#university + .select2,
+#major + .select2,
+#residence-region + .select2,
+#residence-city + .select2 {
+    width: 100% !important;
+}
+
+/* Ensure university name with Chinese characters renders properly */
+.university-option .english-name {
+    font-weight: 500 !important;
+}
+
+.university-option .chinese-name {
+    font-size: 0.9rem !important;
+    color: #666 !important;
+    margin-top: 2px !important;
+}
+
+/* Placeholder styling */
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+    color: var(--text-light) !important;
+}
+
+/* Fix for the blue highlight issue */
+.select2-results__option {
+    background-color: transparent !important;
+}
+
+/* Only apply highlight to the currently highlighted option */
+.select2-results__option--highlighted[aria-selected] {
+    background-color: #4F46E5 !important;
+    color: white !important;
+}
+
+/* Global fixes for Select2 dropdown issues */
+body.select2-dropdown-open {
+    /* Prevent any potential scrolling issues */
+    overflow-x: hidden !important;
+}
+
+/* Ensure dropdown has its own stacking context */
+.select2-container--open .select2-dropdown {
+    isolation: isolate !important;
+}
+
+/* Fieldset Styling */
+fieldset {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.75rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+legend i {
+    color: var(--primary);
+}
+
+/* University Dropdown Styling */
+.university-option {
+    display: flex;
+    flex-direction: column;
+}
+
+.english-name {
+    font-weight: 500;
+}
+
+.chinese-name {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-top: 0.25rem;
+}
+
+/* Highlight matched text in search results */
+.select2-results__option mark {
+    background-color: rgba(79, 70, 229, 0.2);
+    padding: 0;
+    color: inherit;
+    font-weight: 500;
+}
+
+/* Error state for field validation */
+.error-field {
+    border-color: var(--error) !important;
+}
+
+.error-message {
+    color: var(--error);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.error-message::before {
+    content: "⚠️";
+    font-size: 0.875rem;
+}
+
+/* Image preview animation */
+@keyframes previewFade {
+    0% { opacity: 0.7; transform: scale(0.98); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.preview-animation {
+    animation: previewFade 0.3s ease;
+}
+
+/* Residence Dropdown - FIXED */
+.residence-selection {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.75rem !important;
+    width: 100% !important;
+}
+
+.residence-dropdown {
+    width: 100% !important;
+}
+
+.residence-dropdown select {
+    width: 100% !important;
+}
+
+/* Fix for select2 inside residence-dropdown */
+.residence-dropdown .select2-container {
+    width: 100% !important;
+}
+
+/* Nationality with flags */
+.select2-results__option.country-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.country-flag {
+    margin-right: 0.5rem;
+    font-size: 1.25rem;
+}
+
+.select2-selection__rendered.with-flag {
+    display: flex !important;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Fix for date picker alignment */
+.date-picker-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.date-picker-wrapper i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    font-size: 1.25rem;
+    z-index: 1;
+}
+
+.date-picker-wrapper input {
+    padding-left: 2.5rem;
+    width: 100%;
+}
+
+/* Flatpickr styling */
+.flatpickr-calendar {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+    padding: 1rem;
+}
+
+.flatpickr-months {
+    margin-bottom: 0.5rem;
+}
+
+.flatpickr-month {
+    background: transparent;
+    color: var(--text);
+}
+
+.flatpickr-current-month {
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 0.5rem 0;
+}
+
+.flatpickr-weekday {
+    background: transparent;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.flatpickr-day {
+    border-radius: var(--radius-md);
+    border: none;
+    color: var(--text);
+    margin: 0.15rem;
+}
+
+.flatpickr-day.selected {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.flatpickr-day:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-light);
+}
+
+.flatpickr-day.today {
+    border: 1px solid var(--primary-light);
+    color: var(--primary);
+}
+
+.flatpickr-day.today:hover {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+}
+
+.flatpickr-day.disabled {
+    color: var(--text-lighter);
+}
+
+.flatpickr-prev-month, .flatpickr-next-month {
+    fill: var(--text);
+    padding: 0.5rem;
+    border-radius: var(--radius-md);
+}
+
+.flatpickr-prev-month:hover, .flatpickr-next-month:hover {
+    background: var(--primary-light);
+    fill: var(--primary);
+}
+
+/* Major category styling */
+.major-category-wrapper {
+    padding: 0.5rem 0.75rem;
+    font-weight: 500;
+    background-color: var(--background-alt);
+    color: var(--text-light);
+    border-bottom: 1px solid var(--border);
+}
+
+.major-option {
+    padding-left: 1.25rem !important;
+}
+
+/* Fix for disabled select styling */
+select:disabled {
+    background-color: var(--background-alt);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Fix for select2 when in disabled state */
+.select2-container--disabled .select2-selection--single {
+    background-color: var(--background-alt) !important;
+    cursor: not-allowed !important;
+    opacity: 0.7 !important;
+}
+
+/* Footer styles */
+.footer {
+    background-color: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 2rem 0;
+    margin-top: 4rem;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer p {
+    color: var(--text-light);
+    font-size: 0.875rem;
+}
+
+.social-links {
+    display: flex;
+    gap: 1rem;
+}
+
+.social-links a {
+    color: var(--text-light);
+    font-size: 1.25rem;
+    transition: var(--transition);
+}
+
+.social-links a:hover {
+    color: var(--primary);
+}
+
+/* Additional animation for actions */
+.submit-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.submit-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300px;
+    height: 300px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    transition: transform 0.5s, opacity 0.5s;
+}
+
+.submit-btn:active::after {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    transition: 0s;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .photo-uploader {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+    }
+    
+    .current-photo {
+        margin-bottom: 1rem;
+    }
+    
+    .file-upload {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .profile-form h2, fieldset legend {
+        text-align: center;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .residence-selection {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Better mobile experience */
+@media (max-width: 480px) {
+    .profile-container {
+        padding: 0 1rem;
+        margin-top: 5rem;
+    }
+    
+    .profile-header h1 {
+        font-size: 1.75rem;
+    }
+    
+    .profile-header p {
+        font-size: 1rem;
+    }
+    
+    .photo-section, .profile-form {
+        padding: 1.5rem;
+    }
+    
+    fieldset {
+        padding: 1rem;
+    }
+}
+
+/* Accessibility improvements */
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.btn:focus-visible, 
+.file-upload-label:focus-visible {
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+/* Specific fixes for nationality dropdown */
+
+/* Fix country option layout */
+.select2-results__option.country-option,
+.select2-results__option {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 8px 12px !important;
+}
+
+/* Make sure flags are displayed correctly */
+.country-flag {
+    font-size: 1.25rem !important;
+    line-height: 1 !important;
+    display: inline-block !important;
+    margin-right: 0.5rem !important;
+    flex-shrink: 0 !important;
+    width: 1.5rem !important;
+    text-align: center !important;
+}
+
+/* Fix country code display */
+.country-code {
+    display: none !important; /* Hide country codes if not needed */
+}
+
+/* Fix selected country display */
+.select2-selection__rendered.with-flag {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+/* Adjust the nationality dropdown styling */
+#nationality + .select2 .select2-selection {
+    padding: 0.75rem 1rem !important;
+}
+
+/* Make sure dropdown has proper width */
+.select2-container--open .select2-dropdown {
+    min-width: 250px !important;
+}
+
+/* Better formatting for country names */
+.country-name {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+}
+
+/* Fix for highlighted item */
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--primary) !important;
+    color: white !important;
+}
+
+/* Ensure the dropdown is wide enough */
+#nationality + .select2 .select2-dropdown {
+    width: auto !important;
+    min-width: 100% !important;
+}
