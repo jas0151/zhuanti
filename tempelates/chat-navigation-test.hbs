@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Navigation Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #4F46E5;
+        }
+        .card {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: block;
+            background-color: #4F46E5;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            border-radius: 5px;
+            text-decoration: none;
+            margin-bottom: 10px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chat Navigation Test</h1>
+    
+    <div class="card">
+        <h2>1. Enter a User ID</h2>
+        <p>Try navigating directly to a chat with a specific user ID:</p>
+        <input type="text" id="user-id" placeholder="Enter user ID">
+        <a href="#" class="btn" id="go-btn">Go to Chat</a>
+    </div>
+    
+    <div class="card">
+        <h2>2. Try the Test Route</h2>
+        <p>Test the chat-test route first:</p>
+        <input type="text" id="test-id" placeholder="Enter user ID">
+        <a href="#" class="btn" id="test-btn">Go to Test Route</a>
+    </div>
+    
+    <div class="card">
+        <h2>3. Check Connection</h2>
+        <a href="/connections" class="btn">Go to Connections</a>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Chat navigation
+            const userIdInput = document.getElementById('user-id');
+            const goBtn = document.getElementById('go-btn');
+            
+            goBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const userId = userIdInput.value.trim();
+                if (userId) {
+                    window.location.href = `/chat/${userId}`;
+                } else {
+                    alert('Please enter a user ID');
+                }
+            });
+            
+            // Test route navigation
+            const testIdInput = document.getElementById('test-id');
+            const testBtn = document.getElementById('test-btn');
+            
+            testBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const userId = testIdInput.value.trim();
+                if (userId) {
+                    window.location.href = `/chat-test/${userId}`;
+                } else {
+                    alert('Please enter a user ID');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

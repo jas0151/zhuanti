@@ -37,6 +37,16 @@
             <p>Discover fellow students who share your interests, academic goals, and campus lifestyle</p>
         </div>
 
+        <!-- Match Threshold Info Banner -->
+        <div class="match-info-banner">
+            <div class="container">
+                <div class="match-info-content">
+                    <i class='bx bx-info-circle'></i>
+                    <p>Our matching algorithm shows only users with a <strong>65% or higher</strong> compatibility score. This ensures quality connections based on shared interests, academic background, and other factors.</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Modern Filter Container -->
         <div class="filter-container">
             <div class="filter-header" aria-expanded="false" id="filterToggle">
@@ -253,10 +263,7 @@
             
             <div class="view-toggle">
                 <button class="toggle-btn active" data-view="grid">
-                    <i class='bx bx-grid-alt'></i> Grid
-                </button>
-                <button class="toggle-btn" data-view="swipe">
-                    <i class='bx bx-slider'></i> Swipe
+                    <i class='bx bx-grid-alt'></i> Grid View
                 </button>
             </div>
             
@@ -460,7 +467,7 @@
                                         <i class='bx bx-check-double'></i> Connected
                                     </div>
                                 {{else}}
-                                    <form action="/connect/{{this.user._id}}" method="POST" class="connect-form">
+                                    <form action="/connect/{{user._id}}" method="POST" class="connect-form">
                                         <button type="submit" class="connect-btn">
                                             <i class='bx bx-link'></i> Connect
                                         </button>
@@ -476,7 +483,7 @@
                         <i class='bx bx-search-alt'></i>
                     </div>
                     <h3>No matches found</h3>
-                    <p>We couldn't find any matches with your current search criteria. Try these suggestions:</p>
+                    <p>We couldn't find any matches with 65% or higher compatibility score based on your current search criteria. Try these suggestions:</p>
                     
                     <div class="suggestion-cards">
                         <div class="suggestion-card">
@@ -496,22 +503,7 @@
                 </div>
             {{/if}}
         </div>
-        
-        <!-- Swipe Container (initially hidden) -->
-        <div class="swipe-container" id="swipeContainer" style="display: none;">
-            <!-- Swipe cards will be created dynamically by JS -->
-        </div>
-        
-        <!-- Card Action Buttons for Swipe View -->
-        <div class="card-actions" id="cardActions" style="display: none;">
-            <div class="action-button pass" id="passBtn">
-                <i class='bx bx-x'></i>
-            </div>
-            <div class="action-button like" id="likeBtn">
-                <i class='bx bx-heart'></i>
-            </div>
-        </div>
-        
+
         <!-- Pagination -->
         {{#if pagination}}
             <div class="pagination-container">
@@ -557,47 +549,194 @@
     </div>
 
     <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-container">
-            <div class="footer-content">
-                <div class="footer-logo">
-                    <a href="/">CampusMatch</a>
-                    <p>Connect with your campus community.</p>
-                </div>
-                <div class="footer-links">
-                    <div class="footer-section">
-                        <h4>Navigation</h4>
-                        <ul>
-                            <li><a href="/main">Dashboard</a></li>
-                            <li><a href="/gallery">Gallery</a></li>
-                            <li><a href="/matches">Matches</a></li>
-                            <li><a href="/connections">Connections</a></li>
-                        </ul>
-                    </div>
-                    <div class="footer-section">
-                        <h4>Support</h4>
-                        <ul>
-                            <li><a href="/help">Help Center</a></li>
-                            <li><a href="/contact">Contact Us</a></li>
-                        </ul>
-                    </div>
-                    <div class="footer-section">
-                        <h4>Connect</h4>
-                        <div class="social-links">
-                            <a href="#" aria-label="Instagram"><i class='bx bxl-instagram'></i></a>
-                            <a href="#" aria-label="Twitter"><i class='bx bxl-twitter'></i></a>
-                            <a href="#" aria-label="Facebook"><i class='bx bxl-facebook'></i></a>
-                        </div>
-                    </div>
-                </div>
+    <!-- Fixed Footer -->
+<footer class="footer">
+    <div class="footer-container">
+        <div class="footer-content">
+            <div class="footer-logo">
+                <a href="/">CampusMatch</a>
+                <p>Connect with your campus community.</p>
             </div>
-            <div class="footer-bottom">
-                <p>© 2024 CampusMatch. All rights reserved.</p>
+            <div class="footer-links">
+                <div class="footer-section">
+                    <h4>Navigation</h4>
+                    <ul>
+                        <li><a href="/main">Dashboard</a></li>
+                        <li><a href="/gallery">Gallery</a></li>
+                        <li><a href="/matches">Matches</a></li>
+                        <li><a href="/connections">Connections</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="/help">Help Center</a></li>
+                        <li><a href="/contact">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Connect</h4>
+                    <div class="social-links">
+                        <a href="#" aria-label="Instagram"><i class='bx bxl-instagram'></i></a>
+                        <a href="#" aria-label="Twitter"><i class='bx bxl-twitter'></i></a>
+                        <a href="#" aria-label="Facebook"><i class='bx bxl-facebook'></i></a>
+                    </div>
+                </div>
             </div>
         </div>
-    </footer>
+        <div class="footer-bottom">
+            <p>© 2024 CampusMatch. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+    <!-- CSS for the new elements -->
+    <style>
+        .match-info-banner {
+            background-color: #f0f7ff;
+            border-left: 4px solid #3b82f6;
+            margin-bottom: 1.5rem;
+            border-radius: 0.5rem;
+        }
+
+        .match-info-content {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .match-info-content i {
+            font-size: 1.5rem;
+            color: #3b82f6;
+            margin-right: 0.75rem;
+        }
+
+        .match-info-content p {
+            margin: 0;
+            color: #4b5563;
+            font-size: 0.9rem;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 3rem 1rem;
+            background-color: #f9fafb;
+            border-radius: 0.75rem;
+            margin: 2rem 0;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: #9ca3af;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: #6b7280;
+            max-width: 400px;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state-suggestion {
+            font-style: italic;
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+        }
+    </style>
 
     <!-- JavaScript -->
     <script src="/matches.js"></script>
+    <script>
+        // Add this script to your matches.hbs file or create a separate matches.js file
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all connect forms
+    const connectForms = document.querySelectorAll('.connect-form');
+    
+    // Add event listener to each form
+    connectForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get the button and store its original content
+            const button = this.querySelector('button');
+            const originalContent = button.innerHTML;
+            
+            // Show loading state
+            button.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Connecting...';
+            button.disabled = true;
+            
+            // Send AJAX request
+            fetch(this.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update button to show connected state
+                    button.innerHTML = '<i class="bx bx-check"></i> Request Sent';
+                    button.classList.remove('connect-btn');
+                    button.classList.add('connected-btn');
+                    button.disabled = true;
+                    
+                    // Show success notification
+                    showNotification('Connection request sent!', 'success');
+                } else {
+                    // Show error and restore button
+                    button.innerHTML = originalContent;
+                    button.disabled = false;
+                    showNotification(data.error || 'Failed to send request', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                button.innerHTML = originalContent;
+                button.disabled = false;
+                showNotification('Network error. Please try again.', 'error');
+            });
+        });
+    });
+    
+    // Helper function to show notifications
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `toast-notification ${type}`;
+        notification.innerHTML = `
+            <i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i>
+            <span>${message}</span>
+            <button class="close-toast"><i class='bx bx-x'></i></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Add show class after small delay for animation
+        setTimeout(() => notification.classList.add('show'), 10);
+        
+        // Add close button functionality
+        notification.querySelector('.close-toast').addEventListener('click', () => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        });
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
+    }
+});
+    </script>
 </body>
 </html>

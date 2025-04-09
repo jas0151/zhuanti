@@ -1,10 +1,15 @@
-// Existing imports remain the same
+// Imports
 const handlebarsHelpers = require('./handlebarsHelpers');
 const express = require("express");
 const session = require("express-session");
+const MongoStore = require('connect-mongo');
 const path = require("path");
 const hbs = require("hbs");
 const mongoose = require("mongoose");
+const http = require('http');
+const socketIO = require('socket.io');
+const { v4: uuidv4 } = require('uuid');
+const cookieParser = require('cookie-parser');
 const Database = require("./mongodb");
 const AuthController = require("./authController");
 const ProfileController = require("./profileController");
@@ -17,14 +22,50 @@ const PhotoViewController = require("./photoViewController");
 const GalleryController = require("./galleryController");
 const EditProfileController = require("./editProfileController"); 
 const ViewProfileController = require("./viewProfileController");
+const ConnectionController = require("./connectionController");
+const EnhancedChatController = require("./enhancedChatController");
+const SocketChatServer = require("./socketChatServer");
 
 class Server {
     constructor() {
         this.app = express();
         this.userModel = require("./userModel").getModel();
+        
+        // Create HTTP server to attach Socket.IO
+        this.httpServer = http.createServer(this.app);
+        
+        // Configure shared session middleware
+        const sessionStore = MongoStore.create({
+            mongoUrl: 'mongodb://localhost:27017/LoginSignupdb',
+            collectionName: 'sessions',
+            ttl: 24 * 60 * 60, // 24 hours
+            autoRemove: 'native'
+        });
+        
+        // Create shared session middleware
+        this.sessionMiddleware = session({
+            secret: 'your-secret-key',
+            resave: false,
+            saveUninitialized: false,
+            store: sessionStore,
+            cookie: {
+                httpOnly: true,
+                maxAge: 24 * 60 * 60 * 1000 // 24 hours
+            }
+        });
+        
+        // Configure middleware and routes
         this.configureMiddleware();
         handlebarsHelpers.registerHelpers();
         this.configureRoutes();
+        
+        // Initialize Socket.IO chat server with proper session sharing
+        this.socketChatServer = new SocketChatServer(this.httpServer);
+        
+        // Pass session middleware to socket server
+        this.socketChatServer.setSessionMiddleware(this.sessionMiddleware);
+        
+        console.log('Server initialized with enhanced Socket.IO chat support');
     }
 
     configureMiddleware() {
@@ -33,11 +74,19 @@ class Server {
         this.app.set("view engine", "hbs");
         this.app.set("views", path.join(__dirname, "../tempelates"));
         this.app.use(express.urlencoded({ extended: false }));
-        this.app.use(session({
-            secret: 'your-secret-key',
-            resave: false,
-            saveUninitialized: false
-        }));
+        
+        // Add cookie parser
+        this.app.use(cookieParser());
+        
+        // Track tab ID without affecting sessions
+        this.app.use((req, res, next) => {
+            req.tabId = req.query.tabId || uuidv4();
+            res.locals.tabId = req.tabId; // Make available to templates
+            next();
+        });
+        
+        // Use the shared session middleware
+        this.app.use(this.sessionMiddleware);
         
         // Track user activity middleware
         this.app.use(async (req, res, next) => {
@@ -54,9 +103,22 @@ class Server {
             }
             next();
         });
+        
+        // Add user data to all templates
+        this.app.use((req, res, next) => {
+            if (req.session && req.session.userId) {
+                res.locals.session = {
+                    userId: req.session.userId,
+                    userName: req.session.userName || 'User',
+                    tabId: req.tabId
+                };
+            }
+            next();
+        });
     }
 
     configureRoutes() {
+        // Initialize controllers
         const authController = AuthController;
         const profileController = ProfileController;
         const photoController = PhotoController;
@@ -68,98 +130,318 @@ class Server {
         const galleryController = GalleryController; 
         const editProfileController = EditProfileController;
         const viewProfileController = ViewProfileController; 
-
+        const connectionController = ConnectionController;
+        const enhancedChatController = EnhancedChatController;
+        
+        // Debug route for session info
+        this.app.get("/session-debug", (req, res) => {
+            res.json({
+                tabId: req.tabId,
+                sessionId: req.sessionID,
+                session: req.session,
+                cookies: req.cookies,
+                headers: req.headers
+            });
+        });
+        
+        // Tab-specific session check API
+        this.app.get('/api/session-check', (req, res) => {
+            if (req.session && req.session.userId) {
+                res.json({
+                    authenticated: true,
+                    userId: req.session.userId,
+                    userName: req.session.userName || 'User',
+                    tabId: req.tabId
+                });
+            } else {
+                res.json({
+                    authenticated: false,
+                    tabId: req.tabId
+                });
+            }
+        });
+        
+        // Debug route
+        this.app.get("/debug/:userId", async (req, res) => {
+            try {
+                const userId = req.params.userId;
+                const user = await this.userModel.findById(userId).lean();
+                
+                if (!user) {
+                    return res.json({ error: 'User not found' });
+                }
+                
+                // Clean up sensitive data
+                if (user.password) {
+                    user.password = '[REDACTED]';
+                }
+                
+                res.json({
+                    user: user,
+                    tabId: req.tabId,
+                    sessionId: req.sessionID,
+                    sessionData: req.session,
+                    connectionStats: {
+                        hasConnections: !!user.connections,
+                        sentRequests: user.connections?.sentRequests?.length || 0,
+                        receivedRequests: user.connections?.receivedRequests?.length || 0,
+                        connected: user.connections?.connected?.length || 0
+                    },
+                    conversationStats: {
+                        hasConversations: !!user.conversations,
+                        count: user.conversations?.length || 0
+                    }
+                });
+            } catch (error) {
+                res.json({ error: error.message });
+            }
+        });
+        
+        // Route to get messages via API
+        this.app.get("/get-messages/:userId", this.isAuthenticated, async (req, res) => {
+            try {
+                const currentUserId = req.session.userId;
+                const otherUserId = req.params.userId;
+                
+                console.log(`Getting messages between ${currentUserId} and ${otherUserId}`);
+                
+                // Get current user
+                const currentUser = await this.userModel.findById(currentUserId);
+                if (!currentUser) {
+                    return res.status(404).json({
+                        success: false,
+                        error: 'User not found'
+                    });
+                }
+                
+                // Find conversation
+                let conversation = null;
+                if (currentUser.conversations) {
+                    conversation = currentUser.conversations.find(conv => 
+                        conv.participants && conv.participants.includes(otherUserId.toString())
+                    );
+                }
+                
+                console.log(`Messages API - Conversation found: ${!!conversation}`);
+                if (conversation) {
+                    console.log(`Messages API - Message count: ${conversation.messages?.length || 0}`);
+                }
+                
+                // If no conversation or no messages, return empty array
+                if (!conversation || !conversation.messages || conversation.messages.length === 0) {
+                    return res.status(200).json({
+                        success: true,
+                        messages: []
+                    });
+                }
+                
+                return res.status(200).json({
+                    success: true,
+                    messages: conversation.messages,
+                    lastUpdated: conversation.lastUpdated || new Date()
+                });
+            } catch (error) {
+                console.error("Error getting messages:", error);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Server error: ' + error.message
+                });
+            }
+        });
+        
         this.app.get("/", (req, res) => {
-            res.render("home", { userId: req.session.userId });
+            res.render("home", { userId: req.session.userId, tabId: req.tabId });
         });
 
         this.app.get("/login", (req, res) => {
             if (req.session.userId) {
                 res.redirect('/main');
             } else {
-                res.render("login");
+                // Add session error message if available
+                const sessionError = req.query.session;
+                let errorMessage = null;
+                
+                if (sessionError === 'expired') {
+                    errorMessage = 'Your session has expired. Please log in again.';
+                } else if (sessionError === 'conflict') {
+                    errorMessage = 'Session conflict detected. Please log in again.';
+                }
+                
+                res.render("login", { error: errorMessage, tabId: req.tabId });
             }
         });
 
-        this.app.post("/login", authController.login.bind(authController));
-        this.app.get("/signup", (req, res) => {
-            res.render("signup");
+        this.app.post("/login", (req, res) => {
+            // Add tab ID to the request body
+            req.body.tabId = req.tabId;
+            authController.login(req, res);
         });
-        this.app.post("/signup", authController.signup.bind(authController));
+        
+        this.app.get("/signup", (req, res) => {
+            res.render("signup", { tabId: req.tabId });
+        });
+        
+        this.app.post("/signup", (req, res) => {
+            // Add tab ID to the request body
+            req.body.tabId = req.tabId;
+            authController.signup(req, res);
+        });
         
         // Profile routes
-        this.app.get("/create-profile", this.isAuthenticated, profileController.createProfile.bind(profileController));
-        this.app.post("/create-profile", this.isAuthenticated, profileController.createProfile.bind(profileController));
+        this.app.get("/create-profile", this.isAuthenticated, (req, res) => {
+            profileController.createProfile(req, res);
+        });
+        
+        this.app.post("/create-profile", this.isAuthenticated, (req, res) => {
+            profileController.createProfile(req, res);
+        });
         
         // Add this new route for /profile that redirects to edit-profile
         this.app.get("/profile", this.isAuthenticated, (req, res) => {
             res.redirect('/edit-profile');
         });
         
-        this.app.get("/edit-profile", this.isAuthenticated, editProfileController.getEditProfile.bind(editProfileController));
-        this.app.post("/update-profile", this.isAuthenticated, editProfileController.updateProfile.bind(editProfileController));
-        
-        // Photo uploads
-        this.app.post("/upload-photo", this.isAuthenticated, photoController.uploadPhoto.bind(photoController));
-        
-        // Interests routes
-        this.app.get("/interests", this.isAuthenticated, interestController.getInterests.bind(interestController));
-        this.app.post("/create-interests", this.isAuthenticated, interestController.createInterests.bind(interestController));
-        this.app.get("/edit-interests", this.isAuthenticated, editProfileController.getEditInterests.bind(editProfileController));
-        this.app.post("/update-interests", this.isAuthenticated, editProfileController.updateInterests.bind(editProfileController));
-        
-        // Other routes remain the same
-        this.app.get("/matches", this.isAuthenticated, matchController.getMatches.bind(matchController));
-        this.app.get("/logout", logoutController.logout.bind(logoutController));
-        this.app.get("/main", this.isAuthenticated, mainController.getDashboard.bind(mainController));
-        this.app.get("/photo/:userId", photoViewController.getProfilePhoto.bind(photoViewController));
-        this.app.get("/gallery-photo/:userId/:photoId", photoViewController.getGalleryPhoto.bind(photoViewController));
-        this.app.get("/gallery", this.isAuthenticated, galleryController.getGallery.bind(galleryController));
-        this.app.post("/upload-gallery-photo", this.isAuthenticated, galleryController.uploadGalleryPhoto.bind(galleryController));
-        this.app.post("/toggle-privacy/:photoId", this.isAuthenticated, galleryController.togglePhotoPrivacy.bind(galleryController));
-        this.app.post("/delete-gallery-photo/:photoId", this.isAuthenticated, galleryController.deleteGalleryPhoto.bind(galleryController));
-        this.app.get("/view-profile/:userId", this.isAuthenticated, viewProfileController.viewProfile.bind(viewProfileController));
-        this.app.post("/connect/:userId", this.isAuthenticated, matchController.sendConnectionRequest.bind(matchController));
-        
-        // Add any missing routes for connections functionality
-        this.app.get("/connections", this.isAuthenticated, (req, res) => {
-            if (typeof ConnectionController !== 'undefined') {
-                ConnectionController.getConnections.bind(ConnectionController)(req, res);
-            } else {
-                res.redirect('/main?error=feature_not_available');
-            }
+        this.app.get("/edit-profile", this.isAuthenticated, (req, res) => {
+            editProfileController.getEditProfile(req, res);
         });
         
-        // Add routes for accept/reject connection requests
+        this.app.post("/update-profile", this.isAuthenticated, (req, res) => {
+            editProfileController.updateProfile(req, res);
+        });
+        
+        // Photo uploads
+        this.app.post("/upload-photo", this.isAuthenticated, (req, res) => {
+            photoController.uploadPhoto(req, res);
+        });
+        
+        // Interests routes
+        this.app.get("/interests", this.isAuthenticated, (req, res) => {
+            interestController.getInterests(req, res);
+        });
+        
+        this.app.post("/create-interests", this.isAuthenticated, (req, res) => {
+            interestController.createInterests(req, res);
+        });
+        
+        this.app.get("/edit-interests", this.isAuthenticated, (req, res) => {
+            editProfileController.getEditInterests(req, res);
+        });
+        
+        this.app.post("/update-interests", this.isAuthenticated, (req, res) => {
+            editProfileController.updateInterests(req, res);
+        });
+        
+        // Matches routes
+        this.app.get("/matches", this.isAuthenticated, (req, res) => {
+            matchController.getMatches(req, res);
+        });
+        
+        this.app.post("/connect/:userId", this.isAuthenticated, (req, res) => {
+            matchController.sendConnectionRequest(req, res);
+        });
+        
+        // Other static routes
+        this.app.get("/logout", (req, res) => {
+            // Add tab ID to the request
+            req.tabId = req.tabId;
+            logoutController.logout(req, res);
+        });
+        
+        this.app.get("/main", this.isAuthenticated, (req, res) => {
+            mainController.getDashboard(req, res);
+        });
+        
+        this.app.get("/photo/:userId", (req, res) => {
+            photoViewController.getProfilePhoto(req, res);
+        });
+        
+        this.app.get("/gallery-photo/:userId/:photoId", (req, res) => {
+            photoViewController.getGalleryPhoto(req, res);
+        });
+        
+        this.app.get("/gallery", this.isAuthenticated, (req, res) => {
+            galleryController.getGallery(req, res);
+        });
+        
+        this.app.post("/upload-gallery-photo", this.isAuthenticated, (req, res) => {
+            galleryController.uploadGalleryPhoto(req, res);
+        });
+        
+        this.app.post("/toggle-privacy/:photoId", this.isAuthenticated, (req, res) => {
+            galleryController.togglePhotoPrivacy(req, res);
+        });
+        
+        this.app.post("/delete-gallery-photo/:photoId", this.isAuthenticated, (req, res) => {
+            galleryController.deleteGalleryPhoto(req, res);
+        });
+        
+        this.app.get("/view-profile/:userId", this.isAuthenticated, (req, res) => {
+            viewProfileController.viewProfile(req, res);
+        });
+        
+        // Enhanced connection routes
+        this.app.get("/connections", this.isAuthenticated, (req, res) => {
+            connectionController.getConnections(req, res);
+        });
+        
         this.app.post("/accept-connection/:userId", this.isAuthenticated, (req, res) => {
-            if (typeof ConnectionController !== 'undefined') {
-                ConnectionController.acceptConnection.bind(ConnectionController)(req, res);
-            } else {
-                res.status(404).json({ success: false, error: 'Feature not available' });
-            }
+            connectionController.acceptConnection(req, res);
         });
         
         this.app.post("/reject-connection/:userId", this.isAuthenticated, (req, res) => {
-            if (typeof ConnectionController !== 'undefined') {
-                ConnectionController.rejectConnection.bind(ConnectionController)(req, res);
-            } else {
-                res.status(404).json({ success: false, error: 'Feature not available' });
-            }
+            connectionController.rejectConnection(req, res);
         });
         
-        // Add chat routes if needed
+        this.app.post("/remove-connection/:userId", this.isAuthenticated, (req, res) => {
+            connectionController.removeConnection(req, res);
+        });
+        
+        // Enhanced chat routes with real-time support
         this.app.get("/chat/:userId", this.isAuthenticated, (req, res) => {
-            if (typeof ChatController !== 'undefined') {
-                ChatController.getChat.bind(ChatController)(req, res);
-            } else {
-                res.redirect('/connections?error=chat_not_available');
+            // If there's a message parameter, handle it as message sending
+            if (req.query.message) {
+                return enhancedChatController.handleChatMessage(req, res);
             }
+            
+            // Otherwise, render the chat page
+            enhancedChatController.getChat(req, res);
+        });
+        
+        // Chat navigation test route
+        this.app.get("/chat-navigation-test", this.isAuthenticated, (req, res) => {
+            res.render("chat-navigation-test", { tabId: req.tabId });
+        });
+        
+        // API route for connections list in chat sidebar
+        this.app.get("/connections/list", this.isAuthenticated, (req, res) => {
+            enhancedChatController.getConnectionsList(req, res);
+        });
+        
+        // API routes for real-time chat functionality
+        this.app.get("/api/messages/:userId", this.isAuthenticated, (req, res) => {
+            enhancedChatController.getConversationHistory(req, res);
+        });
+        
+        this.app.post("/api/messages/read/:userId", this.isAuthenticated, (req, res) => {
+            enhancedChatController.markMessagesAsRead(req, res);
+        });
+        
+        this.app.get("/connections/api", this.isAuthenticated, (req, res) => {
+            enhancedChatController.getConnectionsList(req, res);
         });
         
         // Change password and privacy settings
-        this.app.post("/change-password", this.isAuthenticated, editProfileController.changePassword.bind(editProfileController));
-        this.app.post("/delete-account", this.isAuthenticated, editProfileController.deleteAccount.bind(editProfileController));
-        this.app.post("/update-privacy", this.isAuthenticated, editProfileController.updatePrivacySettings.bind(editProfileController));
+        this.app.post("/change-password", this.isAuthenticated, (req, res) => {
+            editProfileController.changePassword(req, res);
+        });
+        
+        this.app.post("/delete-account", this.isAuthenticated, (req, res) => {
+            editProfileController.deleteAccount(req, res);
+        });
+        
+        this.app.post("/update-privacy", this.isAuthenticated, (req, res) => {
+            editProfileController.updatePrivacySettings(req, res);
+        });
         
         // Error handling middleware
         this.app.use((err, req, res, next) => {
@@ -184,7 +466,8 @@ class Server {
                 
                 return res.render('error', {
                     message: err.message || "Something went wrong",
-                    error: process.env.NODE_ENV === 'development' ? err : {}
+                    error: process.env.NODE_ENV === 'development' ? err : {},
+                    tabId: req.tabId
                 });
             }
         });
@@ -199,13 +482,14 @@ class Server {
             }
             res.status(404).render('error', {
                 message: "Page not found",
-                error: {}
+                error: {},
+                tabId: req.tabId
             });
         });
     }
     
     isAuthenticated(req, res, next) {
-        if (req.session.userId) {
+        if (req.session && req.session.userId) {
             next();
         } else {
             res.redirect('/login');
@@ -213,8 +497,8 @@ class Server {
     }
 
     start() {
-        this.app.listen(3000, () => {
-            console.log('port connected');
+        this.httpServer.listen(3000, () => {
+            console.log('Server running on port 3000');
         });
     }
 }

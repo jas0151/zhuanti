@@ -1,4 +1,4 @@
-// Complete fixed galleryController.js
+// Enhanced galleryController.js (without Sharp dependency)
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
@@ -55,8 +55,6 @@ class GalleryController {
     async uploadGalleryPhoto(req, res) {
         try {
             console.log("Upload request started");
-            console.log("Request body:", req.body);
-            console.log("Request files before multer:", req.files);
             
             // Create a fresh upload instance for each request
             const upload = multer({
@@ -79,9 +77,6 @@ class GalleryController {
                     }
                 });
             });
-            
-            // Log request file
-            console.log("Request file after upload:", req.file);
             
             // If no file was uploaded
             if (!req.file) {
@@ -119,7 +114,9 @@ class GalleryController {
                 filename: req.file.filename,
                 description: req.body.description || '',
                 isPrivate: req.body.isPrivate === 'on',
-                uploadedAt: new Date()
+                uploadedAt: new Date(),
+                fileSize: req.file.size,
+                fileType: req.file.mimetype
             };
 
             console.log("Created photo object:", photoObj);
@@ -135,7 +132,7 @@ class GalleryController {
             console.log("Photo saved to user gallery");
 
             // Send appropriate response
-            if (req.xhr) {
+            if (req.xhr || req.headers['x-requested-with'] === 'XMLHttpRequest') {
                 return res.status(200).json({
                     success: true,
                     message: "Photo uploaded successfully",
@@ -148,10 +145,10 @@ class GalleryController {
         } catch (error) {
             console.error("Error in gallery photo upload process:", error);
             
-            if (req.xhr) {
+            if (req.xhr || req.headers['x-requested-with'] === 'XMLHttpRequest') {
                 return res.status(500).json({
                     success: false,
-                    message: "Server error during photo upload."
+                    message: error.message || "Server error during photo upload."
                 });
             } else {
                 return res.status(500).send("Server error during photo upload.");
@@ -159,7 +156,6 @@ class GalleryController {
         }
     }
 
-    // Other methods remain unchanged
     async togglePhotoPrivacy(req, res) {
         try {
             const photoId = req.params.photoId;
@@ -315,6 +311,7 @@ class GalleryController {
             // Update the photo details
             user.profile.galleryPhotos[photoIndex].description = description;
             user.profile.galleryPhotos[photoIndex].isPrivate = isPrivate;
+            user.profile.galleryPhotos[photoIndex].lastUpdated = new Date();
 
             await user.save();
 

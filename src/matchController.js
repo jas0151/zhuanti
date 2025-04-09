@@ -42,6 +42,15 @@ class MatchController {
                 hasInterests: true
             };
 
+            // Add filter to exclude rejected users
+            if (currentUser.rejectedUsers && currentUser.rejectedUsers.length > 0) {
+                const rejectedIds = currentUser.rejectedUsers.map(r => r.user.toString());
+                query._id = { 
+                    $ne: currentUserId,
+                    $nin: rejectedIds 
+                };
+            }
+
             // Add indexed field filters
             if (gender) query['profile.gender'] = gender;
             if (university) query['profile.university'] = university;
@@ -108,7 +117,9 @@ class MatchController {
             let updatedMatchScores = false;
             
             // Process the matches with optimized algorithm
-            const potentialMatches = await Promise.all(users.map(async (user) => {
+            const potentialMatches = [];
+            
+            for (const user of users) {
                 // Find existing match score
                 const existingMatch = matchScores.find(m => 
                     m.user && m.user.toString() === user._id.toString()
@@ -155,21 +166,33 @@ class MatchController {
                     });
                     updatedMatchScores = true;
                 }
-                
-                // Get public photos
-                const publicPhotos = user.profile.galleryPhotos?.filter(photo => !photo.isPrivate) || [];
-                
-                // Return processed match data
-                return {
-                    user,
-                    matchScore,
-                    commonInterests,
-                    categories: this.getMatchCategories(currentUser, user),
-                    publicPhotos,
-                    hasRequestedConnection: connectionStatuses.sentRequests.includes(user._id.toString()),
-                    isConnected: connectionStatuses.connectedUsers.includes(user._id.toString())
-                };
-            }));
+
+                // Only include users with 65%+ match score
+                if (matchScore >= 30) {
+                    // Calculate category-specific compatibility scores
+                    const categories = this.getMatchCategories(currentUser, user);
+                    
+                    // Get public photos
+                    const publicPhotos = user.profile.galleryPhotos?.filter(photo => !photo.isPrivate) || [];
+                    
+                    // Determine if the user is online (active in the last 5 minutes)
+                    const isOnline = user.lastActive && 
+                        (new Date() - new Date(user.lastActive)) < 5 * 60 * 1000;
+                    
+                    // Add to potential matches
+                    potentialMatches.push({
+                        user,
+                        matchScore,
+                        commonInterests,
+                        categories,
+                        publicPhotos,
+                        hasRequestedConnection: connectionStatuses.sentRequests.includes(user._id.toString()),
+                        isConnected: connectionStatuses.connectedUsers.includes(user._id.toString()),
+                        isOnline: isOnline,
+                        lastActive: user.lastActive
+                    });
+                }
+            }
             
             // Save updated match scores if needed
             if (updatedMatchScores) {
@@ -200,6 +223,9 @@ class MatchController {
                 hasPrev: parseInt(page) > 1
             };
 
+            // Add a flag to indicate if we have any matches meeting the 65% threshold
+            const hasQualityMatches = totalMatches > 0;
+
             // Pass structured query object for form field population
             const queryObj = {
                 search: search || '',
@@ -219,7 +245,9 @@ class MatchController {
                 potentialMatches: paginatedMatches,
                 filters,
                 query: queryObj,
-                pagination
+                pagination,
+                hasQualityMatches,
+                matchThreshold: 30 // Pass the threshold to the view
             });
         } catch (error) {
             this.handleMatchError(error, req, res);
@@ -287,6 +315,7 @@ class MatchController {
             }, {
                 'profile.university': 1,
                 'profile.major': 1,
+                'profile.domicile': 1,
                 'profile.interests.hobbies': 1,
                 'profile.interests.clubs': 1,
                 'profile.interests.classes': 1,
@@ -296,6 +325,7 @@ class MatchController {
             const filters = {
                 universities: new Set(),
                 majors: new Set(),
+                domiciles: new Set(),
                 hobbies: new Set(),
                 clubs: new Set(),
                 classes: new Set(),
@@ -306,6 +336,7 @@ class MatchController {
                 // Add profile data
                 if (user.profile?.university) filters.universities.add(user.profile.university);
                 if (user.profile?.major) filters.majors.add(user.profile.major);
+                if (user.profile?.domicile) filters.domiciles.add(user.profile.domicile);
                 
                 // Add interest data
                 if (user.profile?.interests?.hobbies) {
@@ -326,6 +357,7 @@ class MatchController {
             return {
                 universities: [...filters.universities].sort(),
                 majors: [...filters.majors].sort(),
+                domiciles: [...filters.domiciles].sort(),
                 hobbies: [...filters.hobbies].sort(),
                 clubs: [...filters.clubs].sort(),
                 classes: [...filters.classes].sort(),
@@ -336,6 +368,7 @@ class MatchController {
             return {
                 universities: [],
                 majors: [],
+                domiciles: [],
                 hobbies: [],
                 clubs: [],
                 classes: [],
@@ -343,14 +376,33 @@ class MatchController {
             };
         }
     }
-    
-    // Enhanced match score calculation
+
+    // Enhanced match score calculation with 65% threshold
     calculateMatchScore(currentUser, potentialMatch) {
-        // Initialize score variables
+        // Initialize score tracking
         let totalMatchScore = 0;
         let totalPossibleScore = 0;
         
-        // Track common interests for display
+        // Detailed scoring weights and categories
+        const weights = {
+            // Interest Categories
+            hobbies: { weight: 1.2, max: 15 },
+            classes: { weight: 1.5, max: 20 },
+            clubs: { weight: 1.3, max: 15 },
+            languages: { weight: 1.0, max: 10 },
+            
+            // Profile Factors
+            university: { weight: 2.0, max: 20 },
+            major: { weight: 1.8, max: 18 },
+            yearOfStudy: { weight: 1.5, max: 15 },
+            domicile: { weight: 1.5, max: 15 },
+            nationality: { weight: 1.2, max: 12 },
+            
+            // Additional Factors
+            profileCompleteness: { weight: 1.0, max: 10 }
+        };
+        
+        // Track common interests
         let commonInterests = {
             hobbies: [],
             classes: [],
@@ -358,119 +410,163 @@ class MatchController {
             languages: []
         };
         
-        // Category weights - can be adjusted to prioritize different interest types
-        const weights = {
-            hobbies: 1.0,    // Standard weight
-            classes: 1.5,    // Classes are more important for study partners
-            clubs: 1.2,      // Clubs show shared activities
-            languages: 0.8   // Languages are useful but less critical
-        };
-        
-        // Track category-specific scores
+        // Category-specific scores
         let categories = {
             hobbies: { score: 0, possible: 0, percentage: 0 },
             classes: { score: 0, possible: 0, percentage: 0 },
             clubs: { score: 0, possible: 0, percentage: 0 },
-            languages: { score: 0, possible: 0, percentage: 0 }
+            languages: { score: 0, possible: 0, percentage: 0 },
+            university: { score: 0, possible: 0, percentage: 0 },
+            major: { score: 0, possible: 0, percentage: 0 },
+            yearOfStudy: { score: 0, possible: 0, percentage: 0 },
+            domicile: { score: 0, possible: 0, percentage: 0 },
+            nationality: { score: 0, possible: 0, percentage: 0 }
         };
         
-        // Calculate match based on interests if both users have them
-        if (currentUser.profile?.interests && potentialMatch.profile?.interests) {
-            // Process each interest category
-            for (const category of Object.keys(weights)) {
-                const currentUserInterests = currentUser.profile.interests[category] || [];
-                const potentialMatchInterests = potentialMatch.profile.interests[category] || [];
-                
-                // Skip if either user has no interests in this category
-                if (currentUserInterests.length === 0) continue;
-                
-                // Calculate the possible score for this category (weighted)
-                const possibleCategoryScore = currentUserInterests.length * weights[category];
+        // Validate user profiles
+        if (!currentUser.profile || !potentialMatch.profile) {
+            return {
+                score: 0,
+                commonInterests: commonInterests,
+                categories: categories
+            };
+        }
+        
+        // Interest Matching
+        const interestCategories = ['hobbies', 'classes', 'clubs', 'languages'];
+        interestCategories.forEach(category => {
+            const currentInterests = currentUser.profile.interests?.[category] || [];
+            const potentialInterests = potentialMatch.profile.interests?.[category] || [];
+            
+            if (currentInterests.length > 0) {
+                // Calculate possible score for this category
+                const possibleCategoryScore = currentInterests.length * weights[category].weight;
                 categories[category].possible = possibleCategoryScore;
                 totalPossibleScore += possibleCategoryScore;
                 
                 // Find matching interests
-                for (const interest of currentUserInterests) {
-                    if (potentialMatchInterests.includes(interest)) {
-                        // Add to common interests for display
-                        commonInterests[category].push(interest);
-                        
-                        // Add weighted score
-                        const interestScore = weights[category];
-                        categories[category].score += interestScore;
-                        totalMatchScore += interestScore;
-                    }
-                }
+                const matchingInterests = currentInterests.filter(interest => 
+                    potentialInterests.includes(interest)
+                );
                 
-                // Calculate percentage for this category
-                if (categories[category].possible > 0) {
-                    categories[category].percentage = Math.round(
-                        (categories[category].score / categories[category].possible) * 100
-                    );
+                // Store common interests
+                if (matchingInterests.length > 0) {
+                    commonInterests[category] = matchingInterests;
+                    
+                    // Calculate score for matching interests
+                    const matchScore = matchingInterests.length * weights[category].weight;
+                    categories[category].score = matchScore;
+                    totalMatchScore += matchScore;
                 }
             }
+        });
+        
+        // University Matching
+        if (currentUser.profile.university && potentialMatch.profile.university) {
+            const universityScore = currentUser.profile.university === potentialMatch.profile.university 
+                ? weights.university.max 
+                : 0;
+            
+            categories.university.score = universityScore;
+            categories.university.possible = weights.university.max;
+            totalMatchScore += universityScore;
+            totalPossibleScore += weights.university.max;
         }
         
-        // Additional matching factors beyond interests
-        
-        // 1. University bonus: Same university increases match
-        if (currentUser.profile?.university && 
-            potentialMatch.profile?.university && 
-            currentUser.profile.university === potentialMatch.profile.university) {
-            totalMatchScore += 5; // Significant bonus for same university
-            totalPossibleScore += 5;
+        // Major Matching
+        if (currentUser.profile.major && potentialMatch.profile.major) {
+            const majorScore = currentUser.profile.major === potentialMatch.profile.major 
+                ? weights.major.max 
+                : (0.5 * weights.major.max);
+            
+            categories.major.score = majorScore;
+            categories.major.possible = weights.major.max;
+            totalMatchScore += majorScore;
+            totalPossibleScore += weights.major.max;
         }
         
-        // 2. Study year proximity: Closer study years may indicate more compatible academic needs
-        if (currentUser.profile?.yearOfStudy && potentialMatch.profile?.yearOfStudy) {
+        // Study Year Proximity
+        if (currentUser.profile.yearOfStudy && potentialMatch.profile.yearOfStudy) {
             const yearDiff = Math.abs(
                 parseInt(currentUser.profile.yearOfStudy) - 
                 parseInt(potentialMatch.profile.yearOfStudy)
             );
             
+            let yearScore = 0;
             if (yearDiff === 0) {
-                totalMatchScore += 3; // Same year
+                yearScore = weights.yearOfStudy.max; // Same year
             } else if (yearDiff === 1) {
-                totalMatchScore += 1.5; // Adjacent year
+                yearScore = 0.7 * weights.yearOfStudy.max; // Adjacent year
+            } else if (yearDiff <= 2) {
+                yearScore = 0.4 * weights.yearOfStudy.max; // Close years
             }
-            totalPossibleScore += 3; // Maximum possible is same year
+            
+            categories.yearOfStudy.score = yearScore;
+            categories.yearOfStudy.possible = weights.yearOfStudy.max;
+            totalMatchScore += yearScore;
+            totalPossibleScore += weights.yearOfStudy.max;
         }
         
-        // 3. Geographic proximity: Same location is convenient for meeting
-        if (currentUser.profile?.domicile && 
-            potentialMatch.profile?.domicile && 
-            currentUser.profile.domicile === potentialMatch.profile.domicile) {
-            totalMatchScore += 3; // Same city/area
-            totalPossibleScore += 3;
+        // Domicile Matching
+        if (currentUser.profile.domicile && potentialMatch.profile.domicile) {
+            const domicileScore = currentUser.profile.domicile === potentialMatch.profile.domicile 
+                ? weights.domicile.max 
+                : 0;
+            
+            categories.domicile.score = domicileScore;
+            categories.domicile.possible = weights.domicile.max;
+            totalMatchScore += domicileScore;
+            totalPossibleScore += weights.domicile.max;
         }
         
-        // 4. Activity level and profile completeness (if tracked)
-        // More active users with complete profiles get small boost
-        if (potentialMatch.profile?.photo) {
-            totalMatchScore += 1; // Has profile photo
-            totalPossibleScore += 1;
+        // Nationality Matching
+        if (currentUser.profile.nationality && potentialMatch.profile.nationality) {
+            const nationalityScore = currentUser.profile.nationality === potentialMatch.profile.nationality 
+                ? weights.nationality.max 
+                : 0;
+            
+            categories.nationality.score = nationalityScore;
+            categories.nationality.possible = weights.nationality.max;
+            totalMatchScore += nationalityScore;
+            totalPossibleScore += weights.nationality.max;
         }
         
-        if (potentialMatch.profile?.galleryPhotos?.length > 0) {
-            totalMatchScore += 1; // Has gallery photos
-            totalPossibleScore += 1;
-        }
-        
-        if (potentialMatch.profile?.bio && potentialMatch.profile.bio.length > 30) {
-            totalMatchScore += 1; // Has detailed bio
-            totalPossibleScore += 1;
-        }
+        // Profile Completeness Bonus
+        const profileCompletenessScore = this.calculateProfileCompletenessScore(potentialMatch);
+        totalMatchScore += profileCompletenessScore;
+        totalPossibleScore += weights.profileCompleteness.max;
         
         // Calculate overall match percentage
         const matchPercentage = totalPossibleScore > 0 
             ? Math.min(Math.round((totalMatchScore / totalPossibleScore) * 100), 100) 
             : 0;
         
-        return {
+        // Return results, filtering out users below 65%
+        return matchPercentage >= 30 ? {
             score: matchPercentage,
             commonInterests,
             categories
+        } : {
+            score: 0,
+            commonInterests: { hobbies: [], classes: [], clubs: [], languages: [] },
+            categories: {}
         };
+    }
+
+    // Helper function to calculate profile completeness
+    calculateProfileCompletenessScore(user) {
+        const profileCompleteness = {
+            photo: user.profile?.photo ? 2 : 0,
+            bio: user.profile?.bio && user.profile.bio.length > 30 ? 2 : 0,
+            fullName: user.profile?.firstName && user.profile?.lastName ? 2 : 0,
+            university: user.profile?.university ? 1 : 0,
+            major: user.profile?.major ? 1 : 0,
+            yearOfStudy: user.profile?.yearOfStudy ? 1 : 0,
+            domicile: user.profile?.domicile ? 1 : 0
+        };
+        
+        const completenessScore = Object.values(profileCompleteness).reduce((a, b) => a + b, 0);
+        return completenessScore;
     }
 
     // Helper to find common interests
@@ -542,277 +638,7 @@ class MatchController {
         return categories;
     }
 
-    // Helper to check if a user has sent a connection request to another user
-    async hasRequestedConnection(senderId, recipientId) {
-        try {
-            const sender = await this.userModel.findById(senderId, 'connections.sentRequests');
-            if (!sender || !sender.connections || !sender.connections.sentRequests) {
-                return false;
-            }
-
-            return sender.connections.sentRequests.some(req => 
-                req.to.toString() === recipientId.toString()
-            );
-        } catch (error) {
-            console.error("Error checking connection request:", error);
-            return false;
-        }
-    }
-    
-    // Helper to check if two users are already connected
-    async areConnected(userId1, userId2) {
-        try {
-            const user = await this.userModel.findById(userId1, 'connections.connected');
-            if (!user || !user.connections || !user.connections.connected) {
-                return false;
-            }
-
-            return user.connections.connected.some(conn => 
-                conn.user.toString() === userId2.toString()
-            );
-        } catch (error) {
-            console.error("Error checking connection status:", error);
-            return false;
-        }
-    }
-    
-    // Improved connection request handling
-    async sendConnectionRequest(req, res) {
-        try {
-            const currentUserId = req.session.userId;
-            const targetUserId = req.params.userId;
-            
-            if (!currentUserId || !targetUserId) {
-                return res.status(400).json({ success: false, error: 'Invalid request' });
-            }
-            
-            // Use transactions for data consistency
-            const session = await mongoose.startSession();
-            session.startTransaction();
-            
-            try {
-                // Find both users within the transaction
-                const [currentUser, targetUser] = await Promise.all([
-                    this.userModel.findById(currentUserId).session(session),
-                    this.userModel.findById(targetUserId).session(session)
-                ]);
-                
-                if (!currentUser || !targetUser) {
-                    await session.abortTransaction();
-                    session.endSession();
-                    return res.status(404).json({ success: false, error: 'User not found' });
-                }
-                
-                // Check if connection already exists or is pending
-                if (!currentUser.connections) {
-                    currentUser.connections = { sentRequests: [], receivedRequests: [], connected: [] };
-                }
-                
-                if (!targetUser.connections) {
-                    targetUser.connections = { sentRequests: [], receivedRequests: [], connected: [] };
-                }
-                
-                // Check if already connected
-                const alreadyConnected = currentUser.connections.connected.some(
-                    conn => conn.user.toString() === targetUserId
-                );
-                
-                if (alreadyConnected) {
-                    await session.abortTransaction();
-                    session.endSession();
-                    return res.status(400).json({ success: false, error: 'Already connected' });
-                }
-                
-                // Check if request already sent
-                const alreadySent = currentUser.connections.sentRequests.some(
-                    req => req.to.toString() === targetUserId
-                );
-                
-                if (alreadySent) {
-                    await session.abortTransaction();
-                    session.endSession();
-                    return res.status(400).json({ success: false, error: 'Request already sent' });
-                }
-                
-                // Check if request already received (auto-connect in this case)
-                const requestReceivedIndex = currentUser.connections.receivedRequests.findIndex(
-                    req => req.from.toString() === targetUserId
-                );
-                
-                if (requestReceivedIndex >= 0) {
-                    // Auto-accept this connection since both users have requested it
-                    
-                    // Remove from received requests
-                    const receivedRequest = currentUser.connections.receivedRequests.splice(requestReceivedIndex, 1)[0];
-                    
-                    // Find and remove from target's sent requests
-                    const sentRequestIndex = targetUser.connections.sentRequests.findIndex(
-                        req => req.to.toString() === currentUserId
-                    );
-                    
-                    if (sentRequestIndex >= 0) {
-                        targetUser.connections.sentRequests.splice(sentRequestIndex, 1);
-                    }
-                    
-                    // Add to both users' connected lists
-                    const now = new Date();
-                    
-                    currentUser.connections.connected.push({
-                        user: targetUserId,
-                        connectedAt: now,
-                        updatedAt: now
-                    });
-                    
-                    targetUser.connections.connected.push({
-                        user: currentUserId,
-                        connectedAt: now,
-                        updatedAt: now
-                    });
-                    
-                    // Save both users
-                    await Promise.all([
-                        currentUser.save({ session }),
-                        targetUser.save({ session })
-                    ]);
-                    
-                    // Commit transaction
-                    await session.commitTransaction();
-                    session.endSession();
-                    
-                    // Return success with connected status
-                    return res.status(200).json({ 
-                        success: true, 
-                        message: 'You are now connected!',
-                        status: 'connected'
-                    });
-                }
-                
-                // Normal case - add connection request
-                currentUser.connections.sentRequests.push({
-                    to: targetUserId,
-                    requestedAt: new Date()
-                });
-                
-                targetUser.connections.receivedRequests.push({
-                    from: currentUserId,
-                    requestedAt: new Date()
-                });
-                
-                // Save both users
-                await Promise.all([
-                    currentUser.save({ session }),
-                    targetUser.save({ session })
-                ]);
-                
-                // Commit transaction
-                await session.commitTransaction();
-                session.endSession();
-                
-                // Return success
-                return res.status(200).json({ 
-                    success: true, 
-                    message: 'Connection request sent',
-                    status: 'requested'
-                });
-            } catch (error) {
-                // If an error occurred, abort the transaction
-                await session.abortTransaction();
-                session.endSession();
-                throw error;
-            }
-        } catch (error) {
-            return this.handleMatchError(error, req, res);
-        }
-    }
-
-    // Refresh matches route
-    async refreshMatches(req, res) {
-        try {
-            // Redirect to matches page to refresh the data
-            res.redirect('/matches');
-        } catch (error) {
-            console.error("Error refreshing matches:", error);
-            res.status(500).json({ success: false, error: 'Failed to refresh matches' });
-        }
-    }
-
-    // Background task to update match scores
-    async updateUserMatchScores(userId) {
-        try {
-            // Get the user
-            const currentUser = await this.userModel.findById(userId);
-            if (!currentUser || !currentUser.hasProfile || !currentUser.hasInterests) {
-                return false;
-            }
-            
-            // Find all potential matches
-            const potentialMatches = await this.userModel.find({
-                _id: { $ne: userId },
-                hasProfile: true,
-                hasInterests: true
-            }).limit(100);
-            
-            // Initialize matchScores array if it doesn't exist
-            if (!currentUser.matchScores) {
-                currentUser.matchScores = [];
-            }
-            
-            // Calculate match scores with all users
-            for (const potentialMatch of potentialMatches) {
-                // Calculate match score
-                const matchData = this.calculateMatchScore(currentUser, potentialMatch);
-                
-                // Find existing match entry
-                const existingMatchIndex = currentUser.matchScores.findIndex(
-                    match => match.user.toString() === potentialMatch._id.toString()
-                );
-                
-                // Continuing matchController.js
-
-                if (existingMatchIndex >= 0) {
-                    // Update existing score
-                    currentUser.matchScores[existingMatchIndex].score = matchData.score;
-                    currentUser.matchScores[existingMatchIndex].lastCalculated = new Date();
-                } else {
-                    // Add new score
-                    currentUser.matchScores.push({
-                        user: potentialMatch._id,
-                        score: matchData.score,
-                        lastCalculated: new Date()
-                    });
-                }
-            }
-            
-            // Save updated user with match scores
-            await currentUser.save();
-            return true;
-        } catch (error) {
-            console.error("Error updating match scores:", error);
-            return false;
-        }
-    }
-
-    // Invalidate old match scores
-    async invalidateOldMatchScores() {
-        try {
-            const TWO_WEEKS = 14 * 24 * 60 * 60 * 1000; // 14 days in milliseconds
-            const cutoffDate = new Date(Date.now() - TWO_WEEKS);
-            
-            // Remove match scores older than two weeks
-            await this.userModel.updateMany(
-                { 'matchScores.lastCalculated': { $lt: cutoffDate } },
-                { $pull: { matchScores: { lastCalculated: { $lt: cutoffDate } } } }
-            );
-            
-            console.log('Old match scores invalidated successfully');
-            return true;
-        } catch (error) {
-            console.error('Error invalidating old match scores:', error);
-            return false;
-        }
-    }
-
-    // Get recommended matches for dashboard
+    // Get recommended matches for dashboard with 65% threshold
     async getRecommendedMatches(userId, limit = 3) {
         try {
             const user = await this.userModel.findById(userId);
@@ -820,13 +646,25 @@ class MatchController {
                 return [];
             }
             
+            // Check if user has rejected users to exclude
+            let rejectedIds = [];
+            if (user.rejectedUsers && user.rejectedUsers.length > 0) {
+                rejectedIds = user.rejectedUsers.map(r => r.user.toString());
+            }
+            
             // Check if we have stored match scores
             if (user.matchScores && user.matchScores.length > 0) {
-                // Get user IDs from top match scores
+                // Get user IDs from top match scores, excluding rejected users and ensuring 65%+ match
                 const topMatchUserIds = user.matchScores
+                    .filter(match => !rejectedIds.includes(match.user.toString()) && match.score >= 30)
                     .sort((a, b) => b.score - a.score)
                     .slice(0, limit * 2) // Get more than needed in case some are filtered out
                     .map(match => match.user);
+                
+                // If no qualifying matches found, return empty array
+                if (topMatchUserIds.length === 0) {
+                    return [];
+                }
                 
                 // Load the actual user documents
                 const matchedUsers = await this.userModel.find({
@@ -844,12 +682,15 @@ class MatchController {
                     
                     // Count common interests
                     let commonInterestsCount = 0;
+                    const commonInterests = { hobbies: [], classes: [], clubs: [], languages: [] };
+                    
                     if (user.profile.interests && matchedUser.profile.interests) {
                         ['hobbies', 'classes', 'clubs', 'languages'].forEach(category => {
                             if (user.profile.interests[category] && matchedUser.profile.interests[category]) {
                                 const common = user.profile.interests[category].filter(
                                     item => matchedUser.profile.interests[category].includes(item)
                                 );
+                                commonInterests[category] = common;
                                 commonInterestsCount += common.length;
                             }
                         });
@@ -858,18 +699,20 @@ class MatchController {
                     return {
                         user: matchedUser,
                         matchScore: matchData.score,
-                        commonInterestsCount
+                        commonInterestsCount,
+                        commonInterests
                     };
                 });
                 
-                // Sort by match score and limit
+                // Double-check the 65% threshold and sort by match score
                 return recommendedMatches
+                    .filter(match => match.matchScore >= 30)
                     .sort((a, b) => b.matchScore - a.matchScore)
                     .slice(0, limit);
             }
             
             // Fallback to direct calculation if no stored scores
-            return await this.calculateRecommendedMatches(user, limit);
+            return await this.calculateRecommendedMatches(user, limit, rejectedIds);
         } catch (error) {
             console.error('Error getting recommended matches:', error);
             return [];
@@ -877,36 +720,47 @@ class MatchController {
     }
 
     // Calculate recommended matches directly (fallback)
-    async calculateRecommendedMatches(user, limit = 3) {
+    async calculateRecommendedMatches(user, limit = 3, rejectedIds = []) {
         try {
             // Find potential matches
-            const potentialMatches = await this.userModel.find({
+            const query = {
                 _id: { $ne: user._id },
                 hasProfile: true,
                 hasInterests: true
-            }).limit(50);
+            };
+            
+            // Exclude rejected users
+            if (rejectedIds.length > 0) {
+                query._id.$nin = rejectedIds;
+            }
+            
+            const potentialMatches = await this.userModel.find(query).limit(50);
 
-            const recommendedMatches = potentialMatches.map(potentialUser => {
-                let matchScore = 0;
-                let commonInterestsCount = 0;
-                
+            const recommendedMatches = [];
+            
+            // Calculate match scores and only include those with 65%+ similarity
+            for (const potentialUser of potentialMatches) {
                 // Calculate match score based on interests
                 if (user.profile.interests && potentialUser.profile.interests) {
                     const matchData = this.calculateMatchScore(user, potentialUser);
-                    matchScore = matchData.score;
                     
-                    // Count common interests
-                    Object.values(matchData.commonInterests).forEach(category => {
-                        commonInterestsCount += category.length;
-                    });
+                    // Only consider matches with 65%+ similarity
+                    if (matchData.score >= 30) {
+                        // Count common interests
+                        let commonInterestsCount = 0;
+                        Object.values(matchData.commonInterests).forEach(category => {
+                            commonInterestsCount += category.length;
+                        });
+                        
+                        recommendedMatches.push({
+                            user: potentialUser,
+                            matchScore: matchData.score,
+                            commonInterestsCount: commonInterestsCount,
+                            commonInterests: matchData.commonInterests
+                        });
+                    }
                 }
-                
-                return {
-                    user: potentialUser,
-                    matchScore: matchScore,
-                    commonInterestsCount: commonInterestsCount
-                };
-            });
+            }
 
             // Sort by match score and limit
             return recommendedMatches
@@ -918,38 +772,390 @@ class MatchController {
         }
     }
 
-    // Centralized error handler for match-related errors
-    handleMatchError(error, req, res, redirectUrl = '/matches') {
-        console.error('Match error:', error);
+    // Improved connection request handling
+    async sendConnectionRequest(req, res) {
+        try {
+            const currentUserId = req.session.userId;
+            const targetUserId = req.params.userId;
+            
+            // Validate inputs
+            if (!mongoose.Types.ObjectId.isValid(targetUserId)) {
+                return res.status(400).json({ success: false, error: 'Invalid user ID' });
+            }
+            
+            // Get both users
+            const [currentUser, targetUser] = await Promise.all([
+                this.userModel.findById(currentUserId),
+                this.userModel.findById(targetUserId)
+            ]);
+            
+            if (!currentUser || !targetUser) {
+                return res.status(404).json({ success: false, error: 'User not found' });
+            }
+            
+            // Calculate match score to validate it's at least 65%
+            const matchData = this.calculateMatchScore(currentUser, targetUser);
+            
+            // Ensure the match score is at least 65%
+            if (matchData.score < 30) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Connection requests can only be sent to users with a 30% or higher match score' 
+                });
+            }
+            
+            // Add validation for request limit to prevent spamming
+            if (currentUser.connections?.sentRequests?.length > 50) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Maximum pending request limit reached (50). Please wait for some responses before sending more requests.'
+                });
+            }
+            
+            // Initialize connections if not present
+            if (!currentUser.connections) {
+                currentUser.connections = { sentRequests: [], receivedRequests: [], connected: [] };
+            }
+            
+            if (!targetUser.connections) {
+                targetUser.connections = { sentRequests: [], receivedRequests: [], connected: [] };
+            }
+            
+            // Check if already connected
+            const alreadyConnected = currentUser.connections.connected.some(conn => 
+                conn.user.toString() === targetUserId
+            );
+            
+            if (alreadyConnected) {
+                return res.status(400).json({ success: false, error: 'Already connected with this user' });
+            }
+            
+// Check if request already sent
+const alreadySent = currentUser.connections.sentRequests.some(req => 
+    req.to.toString() === targetUserId
+);
+
+if (alreadySent) {
+    return res.status(400).json({ success: false, error: 'Request already sent' });
+}
+
+// Check if already received a request from this user (auto-connect)
+const receivedRequest = currentUser.connections.receivedRequests.find(req => 
+    req.from.toString() === targetUserId
+);
+
+if (receivedRequest) {
+    // Auto-connect since both users have requested to connect
+    
+    // Remove from pending requests
+    currentUser.connections.receivedRequests = currentUser.connections.receivedRequests.filter(req => 
+        req.from.toString() !== targetUserId
+    );
+    
+    // Remove from target's sent requests
+    targetUser.connections.sentRequests = targetUser.connections.sentRequests.filter(req => 
+        req.to.toString() !== currentUserId
+    );
+    
+    // Add to both users' connected lists
+    const now = new Date();
+    
+    currentUser.connections.connected.push({
+        user: targetUserId,
+        connectedAt: now,
+        updatedAt: now,
+        matchScore: matchData.score,
+        commonInterests: matchData.commonInterests
+    });
+    
+    targetUser.connections.connected.push({
+        user: currentUserId,
+        connectedAt: now,
+        updatedAt: now,
+        matchScore: matchData.score,
+        commonInterests: matchData.commonInterests
+    });
+    
+    // Initialize conversation
+    await this.initializeConversation(currentUserId, targetUserId, matchData);
+    
+    // Save both users
+    await Promise.all([
+        currentUser.save(),
+        targetUser.save()
+    ]);
+    
+    return res.status(200).json({ 
+        success: true, 
+        message: 'You are now connected!',
+        status: 'connected'
+    });
+}
+
+// Create new connection request
+const now = new Date();
+
+// Add to sent requests
+currentUser.connections.sentRequests.push({
+    to: targetUserId,
+    requestedAt: now
+});
+
+// Add to received requests
+targetUser.connections.receivedRequests.push({
+    from: currentUserId,
+    requestedAt: now
+});
+
+// Add notification for target user
+if (!targetUser.notifications) targetUser.notifications = [];
+
+targetUser.notifications.push({
+    type: 'connection_request',
+    from: currentUserId,
+    message: `${currentUser.profile.firstName} sent you a connection request!`,
+    read: false,
+    timestamp: now
+});
+
+// Save both users
+await Promise.all([
+    currentUser.save(),
+    targetUser.save()
+]);
+
+return res.status(200).json({ 
+    success: true, 
+    message: 'Connection request sent',
+    status: 'requested'
+});
+
+} catch (error) {
+console.error('Error sending connection request:', error);
+return res.status(500).json({ success: false, error: 'Server error' });
+}
+}
+
+// Initialize a conversation between two users
+async initializeConversation(user1Id, user2Id, matchData) {
+try {
+const [user1, user2] = await Promise.all([
+    this.userModel.findById(user1Id),
+    this.userModel.findById(user2Id)
+]);
+
+if (!user1 || !user2) return false;
+
+// Create welcome message with personalized suggestion based on match
+let welcomeMessage = "You are now connected! Start a conversation.";
+
+// Add personalized starter if common interests exist
+if (matchData && matchData.commonInterests) {
+    const commonInterests = matchData.commonInterests;
+    if (commonInterests.classes && commonInterests.classes.length > 0) {
+        welcomeMessage = `You are now connected! You both are taking ${commonInterests.classes[0]}. Maybe you could discuss that?`;
+    } else if (commonInterests.hobbies && commonInterests.hobbies.length > 0) {
+        welcomeMessage = `You are now connected! You both enjoy ${commonInterests.hobbies[0]}. Why not start a conversation about that?`;
+    }
+}
+
+// Initialize conversation for user1
+if (!user1.conversations) user1.conversations = [];
+
+// Check if conversation already exists
+const existingConv1 = user1.conversations.find(conv => 
+    conv.participants && conv.participants.includes(user2Id.toString())
+);
+
+if (!existingConv1) {
+    user1.conversations.push({
+        participants: [user1Id.toString(), user2Id.toString()],
+        messages: [{
+            sender: 'system',
+            content: welcomeMessage,
+            timestamp: new Date()
+        }],
+        createdAt: new Date(),
+        lastUpdated: new Date(),
+        matchScore: matchData?.score || 0
+    });
+    
+    await user1.save();
+}
+
+// Initialize conversation for user2
+if (!user2.conversations) user2.conversations = [];
+
+const existingConv2 = user2.conversations.find(conv => 
+    conv.participants && conv.participants.includes(user1Id.toString())
+);
+
+if (!existingConv2) {
+    user2.conversations.push({
+        participants: [user2Id.toString(), user1Id.toString()],
+        messages: [{
+            sender: 'system',
+            content: welcomeMessage,
+            timestamp: new Date()
+        }],
+        createdAt: new Date(),
+        lastUpdated: new Date(),
+        matchScore: matchData?.score || 0
+    });
+    
+    await user2.save();
+}
+
+return true;
+} catch (error) {
+console.error('Error initializing conversation:', error);
+return false;
+}
+}
+
+// Background task to update match scores
+async updateUserMatchScores(userId) {
+try {
+// Get the user
+const currentUser = await this.userModel.findById(userId);
+if (!currentUser || !currentUser.hasProfile || !currentUser.hasInterests) {
+    return false;
+}
+
+// Find all potential matches excluding rejected users
+const query = {
+    _id: { $ne: userId },
+    hasProfile: true,
+    hasInterests: true
+};
+
+// Add filter to exclude rejected users
+if (currentUser.rejectedUsers && currentUser.rejectedUsers.length > 0) {
+    const rejectedIds = currentUser.rejectedUsers.map(r => r.user.toString());
+    query._id.$nin = rejectedIds;
+}
+
+const potentialMatches = await this.userModel.find(query).limit(100);
+
+// Initialize matchScores array if it doesn't exist
+if (!currentUser.matchScores) {
+    currentUser.matchScores = [];
+}
+
+// Calculate match scores with all users
+for (const potentialMatch of potentialMatches) {
+    // Calculate match score
+    const matchData = this.calculateMatchScore(currentUser, potentialMatch);
+    
+    // Only store matches with 65%+ similarity
+    if (matchData.score >= 30) {
+        // Find existing match entry
+        const existingMatchIndex = currentUser.matchScores.findIndex(
+            match => match.user.toString() === potentialMatch._id.toString()
+        );
         
-        // Determine error type
-        let errorMessage = 'An error occurred while processing your request.';
-        let statusCode = 500;
-        
-        if (error.name === 'ValidationError') {
-            errorMessage = 'Invalid data provided: ' + Object.values(error.errors).map(e => e.message).join(', ');
-            statusCode = 400;
-        } else if (error.name === 'CastError') {
-            errorMessage = 'Invalid ID format.';
-            statusCode = 400;
-        } else if (error.code === 11000) {
-            errorMessage = 'Duplicate key error.';
-            statusCode = 400;
-        } else if (error.message.includes('not found')) {
-            errorMessage = error.message;
-            statusCode = 404;
-        }
-        
-        // Different response based on request type
-        if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
-            return res.status(statusCode).json({
-                success: false,
-                error: errorMessage
-            });
+        if (existingMatchIndex >= 0) {
+            // Update existing score
+            currentUser.matchScores[existingMatchIndex].score = matchData.score;
+            currentUser.matchScores[existingMatchIndex].lastCalculated = new Date();
         } else {
-            return res.redirect(`${redirectUrl}?error=${encodeURIComponent(errorMessage)}`);
+            // Add new score
+            currentUser.matchScores.push({
+                user: potentialMatch._id,
+                score: matchData.score,
+                lastCalculated: new Date()
+            });
+        }
+    } else {
+        // Remove any existing match scores below 65%
+        const existingMatchIndex = currentUser.matchScores.findIndex(
+            match => match.user.toString() === potentialMatch._id.toString()
+        );
+        
+        if (existingMatchIndex >= 0) {
+            currentUser.matchScores.splice(existingMatchIndex, 1);
         }
     }
+}
+
+// Save updated user with match scores
+await currentUser.save();
+return true;
+} catch (error) {
+console.error("Error updating match scores:", error);
+return false;
+}
+}
+
+// Refresh matches route
+async refreshMatches(req, res) {
+try {
+// Clear match scores to force recalculation
+await this.userModel.updateOne(
+    { _id: req.session.userId },
+    { $set: { matchScores: [] } }
+);
+
+// Redirect to matches page to refresh the data
+res.redirect('/matches');
+} catch (error) {
+console.error("Error refreshing matches:", error);
+res.status(500).json({ success: false, error: 'Failed to refresh matches' });
+}
+}
+
+// Invalidate old match scores
+async invalidateOldMatchScores() {
+try {
+const TWO_WEEKS = 14 * 24 * 60 * 60 * 1000; // 14 days in milliseconds
+const cutoffDate = new Date(Date.now() - TWO_WEEKS);
+
+// Remove match scores older than two weeks
+await this.userModel.updateMany(
+    { 'matchScores.lastCalculated': { $lt: cutoffDate } },
+    { $pull: { matchScores: { lastCalculated: { $lt: cutoffDate } } } }
+);
+
+console.log('Old match scores invalidated successfully');
+return true;
+} catch (error) {
+console.error('Error invalidating old match scores:', error);
+return false;
+}
+}
+
+// Centralized error handler for match-related errors
+handleMatchError(error, req, res, redirectUrl = '/matches') {
+console.error('Match error:', error);
+
+// Determine error type
+let errorMessage = 'An error occurred while processing your request.';
+let statusCode = 500;
+
+if (error.name === 'ValidationError') {
+errorMessage = 'Invalid data provided: ' + Object.values(error.errors).map(e => e.message).join(', ');
+statusCode = 400;
+} else if (error.name === 'CastError') {
+errorMessage = 'Invalid ID format.';
+statusCode = 400;
+} else if (error.code === 11000) {
+errorMessage = 'Duplicate key error.';
+statusCode = 400;
+} else if (error.message.includes('not found')) {
+errorMessage = error.message;
+statusCode = 404;
+}
+
+// Different response based on request type
+if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+return res.status(statusCode).json({
+    success: false,
+    error: errorMessage
+});
+} else {
+return res.redirect(`${redirectUrl}?error=${encodeURIComponent(errorMessage)}`);
+}
+}
 }
 
 module.exports = new MatchController();

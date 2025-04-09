@@ -91,16 +91,19 @@
                     <p>Join our community today</p>
                 </div>
 
+                <!-- Hidden name field with default value -->
+                <input type="hidden" id="name" name="name" value="User">
+
                 <div class="form-group">
                     <div class="input-box">
-                        <input id="email" name="email" type="email" class="input-field" placeholder="Email" required>
+                        <input id="email" name="email" type="email" class="input-field" placeholder="Email" value="{{email}}" required>
                         <i class='bx bx-envelope'></i>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <div class="input-box">
-                        <input id="password" name="password" type="password" class="input-field" placeholder="Password" required>
+                        <input id="password" name="password" type="password" class="input-field" placeholder="Password (min 6 characters)" required>
                         <i class='bx bx-lock-alt'></i>
                         <i class='bx bx-show toggle-password'></i>
                     </div>

@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Connections - CampusMatch</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="/connections.css">
+</head>
+<body>
+    <!-- Standardized Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">CampusMatch</a>
+            <div class="nav-menu">
+                <ul class="nav-list">
+                    <li><a href="/main" class="nav-link"><i class='bx bx-home'></i> <span>Dashboard</span></a></li>
+                    <li><a href="/gallery" class="nav-link"><i class='bx bx-images'></i> <span>Gallery</span></a></li>
+                    <li><a href="/matches" class="nav-link"><i class='bx bx-heart'></i> <span>Matches</span></a></li>
+                    <li><a href="/connections" class="nav-link active"><i class='bx bx-user-check'></i> <span>Connections</span></a></li>
+                    <li><a href="/logout" class="nav-signup"><i class='bx bx-log-out'></i> <span>Logout</span></a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    {{#if success}}
+    <div class="success-toast" id="successToast">
+        {{#if_eq success 'request_accepted'}}
+            <i class='bx bx-check-circle'></i> Connection request accepted!
+        {{else if_eq success 'request_rejected'}}
+            <i class='bx bx-check-circle'></i> Connection request rejected.
+        {{else}}
+            <i class='bx bx-check-circle'></i> Action completed successfully!
+        {{/if_eq}}
+        <button class="close-toast" type="button"><i class='bx bx-x'></i></button>
+    </div>
+    {{/if}}
+
+    {{#if error}}
+    <div class="error-toast" id="errorToast">
+        <i class='bx bx-error-circle'></i> {{error}}
+        <button class="close-toast" type="button"><i class='bx bx-x'></i></button>
+    </div>
+    {{/if}}
+
+    <div class="connections-container">
+        <div class="connections-header">
+            <h1>Your Connections</h1>
+            <p>Manage your campus connections and messages</p>
+        </div>
+
+        <div class="connections-tabs">
+            <button class="tab-btn active" data-tab="pending">
+                <i class='bx bx-time'></i> Pending Requests 
+                {{#if pendingRequests.length}}
+                <span class="badge">{{pendingRequests.length}}</span>
+                {{/if}}
+            </button>
+            <button class="tab-btn" data-tab="accepted">
+                <i class='bx bx-user-check'></i> Connected 
+                {{#if acceptedConnections.length}}
+                <span class="badge">{{acceptedConnections.length}}</span>
+                {{/if}}
+            </button>
+        </div>
+
+        <div class="tab-content" id="pending-tab">
+            {{#if pendingRequests.length}}
+                <div class="connections-grid">
+                    {{#each pendingRequests}}
+                        <div class="connection-card" data-user-id="{{this.user._id}}">
+                            <div class="connection-avatar">
+                                {{#if this.user.profile.photo}}
+                                    <img src="/photo/{{this.user._id}}" alt="{{this.user.profile.firstName}}">
+                                {{else}}
+                                    <img src="/default-avatar.png" alt="Default Avatar">
+                                {{/if}}
+                            </div>
+                            <div class="connection-info">
+                                <h3>{{this.user.profile.firstName}} {{this.user.profile.lastName}}</h3>
+                                <p>{{this.user.profile.university}}</p>
+                                <p class="connection-detail">{{this.user.profile.major}}, Year {{this.user.profile.yearOfStudy}}</p>
+                                <p class="connection-time">
+                                    <i class='bx bx-time'></i> Requested {{formatTimeAgo this.connectionData.requestedAt}}
+                                </p>
+                            </div>
+                            <div class="connection-actions">
+                                <form action="/accept-connection/{{this.user._id}}" method="POST" class="connection-form accept-form">
+                                    <button type="submit" class="action-btn accept-btn">
+                                        <i class='bx bx-check'></i> Accept
+                                    </button>
+                                </form>
+                                <form action="/reject-connection/{{this.user._id}}" method="POST" class="connection-form reject-form">
+                                    <button type="submit" class="action-btn reject-btn">
+                                        <i class='bx bx-x'></i> Decline
+                                    </button>
+                                </form>
+                                <a href="/view-profile/{{this.user._id}}" class="action-btn view-btn">
+                                    <i class='bx bx-user'></i> View Profile
+                                </a>
+                            </div>
+                        </div>
+                    {{/each}}
+                </div>
+            {{else}}
+                <div class="empty-state">
+                    <i class='bx bx-time-five'></i>
+                    <p>You don't have any pending connection requests.</p>
+                </div>
+            {{/if}}
+        </div>
+
+        <div class="tab-content" id="accepted-tab" style="display: none;">
+            {{#if acceptedConnections.length}}
+                <div class="connections-grid">
+                    {{#each acceptedConnections}}
+                        <div class="connection-card" data-user-id="{{this.user._id}}">
+                            <div class="connection-avatar">
+                                {{#if this.user.profile.photo}}
+                                    <img src="/photo/{{this.user._id}}" alt="{{this.user.profile.firstName}}">
+                                {{else}}
+                                    <img src="/default-avatar.png" alt="Default Avatar">
+                                {{/if}}
+                            </div>
+                            <div class="connection-info">
+                                <h3>{{this.user.profile.firstName}} {{this.user.profile.lastName}}</h3>
+                                <p>{{this.user.profile.university}}</p>
+                                <p class="connection-detail">{{this.user.profile.major}}, Year {{this.user.profile.yearOfStudy}}</p>
+                                <p class="connection-time">
+                                    <i class='bx bx-check-circle'></i> Connected {{formatTimeAgo this.connectionData.updatedAt}}
+                                </p>
+                                {{#if this.isOnline}}
+                                    <p class="connection-status online">
+                                        <i class='bx bxs-circle'></i> Online
+                                    </p>
+                                {{else}}
+                                    <p class="connection-status offline">
+                                        <i class='bx bxs-circle'></i> Last seen {{formatTimeAgo this.user.lastActive}}
+                                    </p>
+                                {{/if}}
+                            </div>
+                            <div class="connection-actions">
+                                <a href="/chat/{{this.user._id}}" class="action-btn message-btn">
+                                    <i class='bx bx-message-square-detail'></i> Message
+                                    {{#if this.hasUnreadMessages}}
+                                        <span class="unread-badge"></span>
+                                    {{/if}}
+                                </a>
+                                <a href="/view-profile/{{this.user._id}}" class="action-btn view-btn">
+                                    <i class='bx bx-user'></i> View Profile
+                                </a>
+                                <button type="button" class="action-btn remove-connection-btn" data-user-id="{{this.user._id}}">
+                                    <i class='bx bx-user-x'></i> Remove
+                                </button>
+                            </div>
+                        </div>
+                    {{/each}}
+                </div>
+            {{else}}
+                <div class="empty-state">
+                    <i class='bx bx-user-check'></i>
+                    <p>You don't have any active connections yet.</p>
+                    <a href="/matches" class="empty-action-btn">Find Matches</a>
+                </div>
+            {{/if}}
+        </div>
+    </div>
+
+    <script>
+    // Tab switching
+    document.addEventListener('DOMContentLoaded', function() {
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // Hide all tab contents
+                tabContents.forEach(content => content.style.display = 'none');
+                
+                // Show selected tab content
+                const tabId = this.getAttribute('data-tab');
+                document.getElementById(`${tabId}-tab`).style.display = 'block';
+                
+                // Save active tab preference in localStorage
+                localStorage.setItem('activeConnectionTab', tabId);
+            });
+        });
+        
+        // Check for stored preference
+        const savedTab = localStorage.getItem('activeConnectionTab');
+        if (savedTab) {
+            const savedTabButton = document.querySelector(`.tab-btn[data-tab="${savedTab}"]`);
+            if (savedTabButton) {
+                savedTabButton.click();
+            }
+        }
+        
+        // Handle toasts
+        const successToast = document.getElementById('successToast');
+        const errorToast = document.getElementById('errorToast');
+        
+        if (successToast) {
+            // Show toast
+            setTimeout(() => {
+                successToast.classList.add('show');
+            }, 300);
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                successToast.classList.remove('show');
+                setTimeout(() => {
+                    successToast.style.display = 'none';
+                }, 300);
+            }, 5000);
+            
+            // Close button
+            const closeBtn = successToast.querySelector('.close-toast');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    successToast.classList.remove('show');
+                    setTimeout(() => {
+                        successToast.style.display = 'none';
+                    }, 300);
+                });
+            }
+        }
+        
+        if (errorToast) {
+            // Same for error toast
+            setTimeout(() => {
+                errorToast.classList.add('show');
+            }, 300);
+            
+            setTimeout(() => {
+                errorToast.classList.remove('show');
+                setTimeout(() => {
+                    errorToast.style.display = 'none';
+                }, 300);
+            }, 5000);
+            
+            const closeBtn = errorToast.querySelector('.close-toast');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    errorToast.classList.remove('show');
+                    setTimeout(() => {
+                        errorToast.style.display = 'none';
+                    }, 300);
+                });
+            }
+        }
+        
+        // Handle connection forms - Accept connection
+        const acceptForms = document.querySelectorAll('.accept-form');
+        acceptForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Show loading state
+                const card = this.closest('.connection-card');
+                const cardContent = card.innerHTML;
+                
+                // Replace with loading state
+                card.innerHTML = `
+                    <div class="connection-loading">
+                        <div class="loading-spinner">
+                            <i class='bx bx-loader-alt bx-spin'></i>
+                        </div>
+                        <p>Accepting connection...</p>
+                    </div>
+                `;
+                
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Connection request failed');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Show success animation
+                        card.innerHTML = `
+                            <div class="connection-success">
+                                <div class="success-icon">
+                                    <i class='bx bx-check-circle'></i>
+                                </div>
+                                <p>Connection accepted!</p>
+                                <p class="redirect-message">Opening chat...</p>
+                            </div>
+                        `;
+                        
+                        // Add visual success effect to the card
+                        card.classList.add('success-animation');
+                        
+                        // Update badge counters
+                        updateBadgeCounts('pending', -1);
+                        updateBadgeCounts('accepted', 1);
+                        
+                        // Redirect to chat after a short delay (for the animation to complete)
+                        setTimeout(() => {
+                            window.location.href = `/chat/${data.userId}`;
+                        }, 1500);
+                    } else {
+                        // Restore original content on error
+                        card.innerHTML = cardContent;
+                        showNotification('error', data.error || 'Failed to accept connection');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    
+                    // Restore original content on error
+                    card.innerHTML = cardContent;
+                    showNotification('error', 'Connection failed. Please try again.');
+                });
+            });
+        });
+
+        // Handle connection forms - Reject connection
+        const rejectForms = document.querySelectorAll('.reject-form');
+        rejectForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Get the button and show loading state
+                const button = this.querySelector('button');
+                const originalContent = button.innerHTML;
+                button.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processing...';
+                button.disabled = true;
+                
+                fetch(this.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove the card with animation
+                        const card = this.closest('.connection-card');
+                        card.style.opacity = 0;
+                        setTimeout(() => {
+                            card.remove();
+                            
+                            // Check if no more cards
+                            const container = document.querySelector('#pending-tab .connections-grid');
+                            if (container && container.children.length === 0) {
+                                const emptyState = document.createElement('div');
+                                emptyState.className = 'empty-state';
+                                emptyState.innerHTML = `
+                                    <i class='bx bx-time-five'></i>
+                                    <p>You don't have any pending connection requests.</p>
+                                `;
+                                
+                                document.getElementById('pending-tab').innerHTML = '';
+                                document.getElementById('pending-tab').appendChild(emptyState);
+                            }
+                            
+                            // Update badge count
+                            updateBadgeCounts('pending', -1);
+                            
+                            // Show success notification
+                            showNotification('success', 'Connection request rejected');
+                        }, 300);
+                    } else {
+                        // Restore button
+                        button.innerHTML = originalContent;
+                        button.disabled = false;
+                        
+                        // Show error
+                        showNotification('error', data.error || 'Something went wrong');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    button.innerHTML = originalContent;
+                    button.disabled = false;
+                    
+                    // Show error
+                    showNotification('error', 'Failed to process request');
+                });
+            });
+        });
+        
+        // Handle remove connection buttons
+        const removeButtons = document.querySelectorAll('.remove-connection-btn');
+        removeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const userId = this.getAttribute('data-user-id');
+                if (!userId) return;
+                
+                if (!confirm('Are you sure you want to remove this connection?')) {
+                    return;
+                }
+                
+                this.disabled = true;
+                this.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i>';
+                
+                fetch(`/remove-connection/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove the card with animation
+                        const card = this.closest('.connection-card');
+                        card.style.opacity = 0;
+                        setTimeout(() => {
+                            card.remove();
+                            
+                            // Check if no more cards
+                            const container = document.querySelector('#accepted-tab .connections-grid');
+                            if (container && container.children.length === 0) {
+                                const emptyState = document.createElement('div');
+                                emptyState.className = 'empty-state';
+                                emptyState.innerHTML = `
+                                    <i class='bx bx-user-check'></i>
+                                    <p>You don't have any active connections yet.</p>
+                                    <a href="/matches" class="empty-action-btn">Find Matches</a>
+                                `;
+                                
+                                document.getElementById('accepted-tab').innerHTML = '';
+                                document.getElementById('accepted-tab').appendChild(emptyState);
+                            }
+                            
+                            // Update badge count
+                            updateBadgeCounts('accepted', -1);
+                            
+                            // Show success notification
+                            showNotification('success', 'Connection removed');
+                        }, 300);
+                    } else {
+                        // Restore button
+                        this.disabled = false;
+                        this.innerHTML = '<i class="bx bx-user-x"></i> Remove';
+                        
+                        // Show error
+                        showNotification('error', data.error || 'Failed to remove connection');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bx bx-user-x"></i> Remove';
+                    
+                    // Show error
+                    showNotification('error', 'Failed to process request');
+                });
+            });
+        });
+
+        // Enhanced message button functionality
+        function initMessageButtons() {
+            const messageButtons = document.querySelectorAll('.message-btn');
+            
+            messageButtons.forEach((btn) => {
+                // Replace existing onclick handler with enhanced version
+                btn.onclick = function(e) {
+                    // Don't prevent default - we want the link to work
+                    console.log(`Chat button clicked, navigating to: ${this.getAttribute('href')}`);
+                    
+                    // Add visual feedback
+                    const originalContent = this.innerHTML;
+                    this.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Opening chat...';
+                    
+                    // Let the browser navigate to the href
+                    // If the page transitions very quickly, some of this may not execute
+                    setTimeout(() => {
+                        this.innerHTML = originalContent;
+                    }, 2000);
+                };
+            });
+            
+            console.log(`Enhanced ${messageButtons.length} message buttons`);
+        }
+        
+        // Initialize message buttons
+        initMessageButtons();
+        
+        // Helper function to update badge counts
+        function updateBadgeCounts(tabName, change) {
+            const tab = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+            let badge = tab.querySelector('.badge');
+            
+            if (badge) {
+                const currentCount = parseInt(badge.textContent);
+                const newCount = currentCount + change;
+                
+                if (newCount <= 0) {
+                    badge.remove();
+                } else {
+                    badge.textContent = newCount;
+                }
+            } else if (change > 0) {
+                // Create new badge if needed
+                const newBadge = document.createElement('span');
+                newBadge.className = 'badge';
+                newBadge.textContent = change;
+                tab.appendChild(newBadge);
+            }
+        }
+        
+        // Helper function to show notifications
+        function showNotification(type, message) {
+            const notification = document.createElement('div');
+            notification.className = `${type}-toast show`;
+            
+            let icon = 'bx-info-circle';
+            if (type === 'success') icon = 'bx-check-circle';
+            if (type === 'error') icon = 'bx-error-circle';
+            
+            notification.innerHTML = `
+                <i class='bx ${icon}'></i>
+                <span>${message}</span>
+                <button class="close-toast" type="button"><i class='bx bx-x'></i></button>
+            `;
+            
+            // Add to body
+            document.body.appendChild(notification);
+            
+            // Auto hide after 3 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+            
+            // Add close button functionality
+            const closeBtn = notification.querySelector('.close-toast');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 300);
+                });
+            }
+        }
+    });
+    </script>
+    
+</body>
+</html>

@@ -9,19 +9,21 @@
     <link rel="stylesheet" href="gallery.css">
 </head>
 <body>
+    <!-- Standardized Navbar -->
     <nav class="navbar">
-    <div class="nav-container">
-        <a href="/" class="nav-logo">CampusMatch</a>
-        <div class="nav-menu">
-            <ul class="nav-list">
-                <li><a href="/main" class="nav-link"><i class='bx bx-home'></i> <span>Dashboard</span></a></li>
-                <li><a href="/gallery" class="nav-link"><i class='bx bx-images'></i> <span>Gallery</span></a></li>
-                <li><a href="/matches" class="nav-link"><i class='bx bx-heart'></i> <span>Matches</span></a></li>
-                <li><a href="/logout" class="nav-signup"><i class='bx bx-log-out'></i> <span>Logout</span></a></li>
-            </ul>
+        <div class="nav-container">
+            <a href="/" class="nav-logo">CampusMatch</a>
+            <div class="nav-menu">
+                <ul class="nav-list">
+                    <li><a href="/main" class="nav-link"><i class='bx bx-home'></i> <span>Dashboard</span></a></li>
+                    <li><a href="/gallery" class="nav-link active"><i class='bx bx-images'></i> <span>Gallery</span></a></li>
+                    <li><a href="/matches" class="nav-link"><i class='bx bx-heart'></i> <span>Matches</span></a></li>
+                    <li><a href="/connections" class="nav-link"><i class='bx bx-user-check'></i> <span>Connections</span></a></li>
+                    <li><a href="/logout" class="nav-signup"><i class='bx bx-log-out'></i> <span>Logout</span></a></li>
+                </ul>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
     <div class="page-container">
         <div class="page-header">
@@ -35,35 +37,72 @@
             <!-- Left Sidebar with Upload and Stats -->
             <div class="gallery-sidebar">
                 <!-- BEGIN REPLACEMENT UPLOAD AREA -->
-                <div class="upload-card">
-                  <h2><span class="icon icon-upload"></span> Add New Photo</h2>
-                  
-                  <form id="uploadForm" action="/upload-gallery-photo" method="POST" enctype="multipart/form-data">
-                    <div class="simple-form-row">
-                      <input type="file" id="fileInput" name="galleryPhoto" accept="image/*" class="file-input-hidden">
-                      <label for="fileInput" class="simple-upload-btn">Choose File</label>
-                      <div class="file-status" id="fileStatus">No file selected</div>
-                    </div>
-                    
-                    <div class="simple-form-row">
-                      <label for="description">Description (optional)</label>
-                      <textarea id="description" name="description" placeholder="Tell us about this photo" rows="3" class="form-textarea"></textarea>
-                    </div>
-                    
-                    <div class="privacy-row">
-                      <label for="isPrivate">
-                        <span class="icon icon-shield"></span>
-                        Photo Privacy:
-                      </label>
-                      <input type="checkbox" id="isPrivate" name="isPrivate">
-                      <span id="privacyText">Public</span>
-                    </div>
+                <!-- IMPROVED UPLOAD AREA -->
+<div class="upload-card">
+  <h2><i class='bx bx-cloud-upload'></i> Add New Photos</h2>
+  
+  <form id="uploadForm" action="/upload-gallery-photo" method="POST" enctype="multipart/form-data">
+    <!-- Simple Upload Area -->
+    <div class="upload-area" id="uploadArea">
+      <div class="upload-preview" id="uploadPreview">
+        <i class='bx bx-images upload-icon'></i>
+        <p class="upload-text">Add your photos here</p>
+        <label for="fileInput" class="upload-btn">Select Photos</label>
+      </div>
+      
+      <div class="selected-files" id="selected-files" style="display: none;"></div>
+      
+      <input type="file" id="fileInput" name="galleryPhoto" accept="image/*" class="file-input-hidden" multiple>
+    </div>
+    
+    <!-- Selected Files Counter -->
+    <div class="file-status" id="fileStatus">
+      <i class='bx bx-file'></i>
+      <span id="fileStatusText">No files selected</span>
+    </div>
+    
+    <!-- Upload Progress Bar -->
+    <div class="upload-progress" style="display: none;">
+      <div class="upload-progress-bar"></div>
+    </div>
+    
+    <!-- Description for all photos -->
+    <div class="form-group">
+      <label for="description">
+        <i class='bx bx-text'></i> Description (applies to all photos)
+      </label>
+      <textarea id="description" name="description" placeholder="Tell us about these photos" rows="3" class="form-textarea"></textarea>
+      <div class="char-counter">
+        <span id="charCount">0</span> / 200 characters
+      </div>
+    </div>
+    
+    <!-- Privacy Toggle with Animation -->
+    <div class="form-group">
+      <div class="switch-container">
+        <label for="isPrivate" class="switch-label">
+          <i class='bx bx-shield'></i> Photos Privacy
+        </label>
+        <div class="toggle-switch-wrapper">
+          <label class="toggle-switch">
+            <input type="checkbox" id="isPrivate" name="isPrivate">
+            <span class="toggle-label"></span>
+          </label>
+          <div class="privacy-status">
+            <i class='bx bx-globe' id="publicIcon"></i>
+            <i class='bx bx-lock' id="privateIcon" style="display: none;"></i>
+            <span id="privacyText">Public</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
-                    <button type="submit" id="uploadSubmitBtn" class="submit-button" disabled>
-                      <span class="icon icon-cloud-upload"></span> Upload Photo
-                    </button>
-                  </form>
-                </div>
+    <!-- Submit Button with Loading State -->
+    <button type="submit" id="uploadSubmitBtn" class="submit-button" disabled>
+      <i class='bx bx-cloud-upload'></i> Upload Photos
+    </button>
+  </form>
+</div>
                 <!-- END REPLACEMENT UPLOAD AREA -->
                 
                 <div class="gallery-stats">
@@ -145,7 +184,7 @@
                                     <img src="/gallery-photo/{{../user._id}}/{{this._id}}" 
                                     alt="{{this.description}}"
                                     loading="lazy"
-                                    onerror="this.onerror=null; this.src='/default-gallery-image.png'; this.classList.add('error-image');">nerror="this.onerror=null; this.src='/default-gallery-image.png'; this.classList.add('error-image');">
+                                    onerror="this.onerror=null; this.src='/default-gallery-image.png'; this.classList.add('error-image');">
                                     
                                     {{#if isPrivate}}
                                         <span class="private-badge"><span class="icon icon-lock"></span> Private</span>
@@ -299,6 +338,7 @@
                         <li><a href="/main">Dashboard</a></li>
                         <li><a href="/gallery">Gallery</a></li>
                         <li><a href="/matches">Matches</a></li>
+                        <li><a href="/connections">Connections</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
