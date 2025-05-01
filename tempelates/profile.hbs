@@ -113,6 +113,16 @@
         .nationality-flag {
             margin-right: 0.5rem;
         }
+        
+        /* Preview animation */
+        .preview-animation {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -141,7 +151,7 @@
                 <h2><i class='bx bx-camera'></i> Profile Photo</h2>
                 <div class="profile-photo-container">
                     {{#if user.profile.photo}}
-                    <img src="/uploads/profiles/{{user.profile.photo}}" alt="Profile Photo" class="profile-photo" id="profile-photo-preview">
+                    <img src="/photo/{{user._id}}?t={{timestamp}}" alt="Profile Photo" class="profile-photo" id="profile-photo-preview">
                     {{else}}
                     <div class="profile-photo-placeholder" id="profile-photo-placeholder">
                         <i class='bx bx-user'></i>
@@ -519,11 +529,12 @@
             }
         });
         
-        // Auto-submit photo form when selecting a file (optional)
-        $('#photo-upload').on('change', function() {
-            if ($(this).val()) {
-                $('#photo-upload-form').submit();
-            }
+        // Show photo upload progress
+        $('#photo-upload-form').on('submit', function() {
+            $('#submit-photo-btn').html('<i class="bx bx-loader-alt bx-spin"></i> Uploading...').prop('disabled', true);
+            
+            // Log to debug panel
+            $('#debugPanel').append('<div class="debug-log">Uploading photo...</div>');
         });
         
         // Form validation

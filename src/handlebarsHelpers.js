@@ -313,83 +313,10 @@ module.exports.registerHelpers = function() {
         
         return !(hasHobbies || hasClasses || hasClubs || hasLanguages);
     });
+    
+    // ADD TIMESTAMP HELPER FOR CACHE BUSTING
+    // This is important for preventing browsers from caching old profile photos
+    hbs.registerHelper('timestamp', function() {
+        return new Date().getTime();
+    });
 };
-// Add these helper functions to your handlebarsHelpers.js file
-
-// Helper to format time
-hbs.registerHelper('formatTime', function(timestamp) {
-    if (!timestamp) return '';
-    
-    const date = new Date(timestamp);
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    const messageDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    
-    let formattedTime = '';
-    if (messageDay.getTime() === today.getTime()) {
-        formattedTime = 'Today';
-    } else if (messageDay.getTime() === yesterday.getTime()) {
-        formattedTime = 'Yesterday';
-    } else {
-        formattedTime = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-    }
-    
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    formattedTime += `, ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-    
-    return formattedTime;
-});
-
-// Helper to format time ago
-hbs.registerHelper('formatTimeAgo', function(timestamp) {
-    if (!timestamp) return 'Never';
-    
-    const now = new Date();
-    const date = new Date(timestamp);
-    const seconds = Math.floor((now - date) / 1000);
-    
-    if (seconds < 60) {
-        return 'Just now';
-    }
-    
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) {
-        return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`;
-    }
-    
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) {
-        return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
-    }
-    
-    const days = Math.floor(hours / 24);
-    if (days < 30) {
-        return `${days} ${days === 1 ? 'day' : 'days'} ago`;
-    }
-    
-    const months = Math.floor(days / 30);
-    if (months < 12) {
-        return `${months} ${months === 1 ? 'month' : 'months'} ago`;
-    }
-    
-    const years = Math.floor(months / 12);
-    return `${years} ${years === 1 ? 'year' : 'years'} ago`;
-});
-
-// Helper for conditional equals comparison in handlebars
-hbs.registerHelper('if_eq', function(a, b, opts) {
-    if (a == b) {
-        return opts.fn(this);
-    } else {
-        return opts.inverse(this);
-    }
-});
-
-// Helper for subtraction
-hbs.registerHelper('subtract', function(a, b) {
-    return a - b;
-});

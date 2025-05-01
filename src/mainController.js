@@ -15,6 +15,9 @@ class MainController {
             // Calculate profile completion percentage
             const profileCompletion = this.calculateProfileCompletion(user);
             
+            // Set profile complete flag when profile completion is 100%
+            const profileComplete = profileCompletion >= 100;
+            
             // Get recommended matches if user has interests
             let recommendedMatches = [];
             if (user.hasInterests) {
@@ -24,12 +27,26 @@ class MainController {
                 // Get matches with optimized method
                 recommendedMatches = await matchController.getRecommendedMatches(user._id, 3);
             }
+    
+            // Get user initials
+            const firstName = user.profile?.firstName || '';
+            const lastName = user.profile?.lastName || '';
+            const userInitials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+    
+            // Add timestamp for cache busting
+            const timestamp = Date.now();
 
             res.render("main", {
                 user: user,
+                userId: user._id,
+                userName: `${firstName} ${lastName}`.trim(),
+                userInitials: userInitials,
+                firstName: firstName,
                 recommendedMatches: recommendedMatches,
                 profileCompletion: profileCompletion,
-                success: req.query.success
+                profileComplete: profileComplete, // Add this flag
+                success: req.query.success,
+                timestamp: timestamp // Add timestamp for cache busting
             });
         } catch (error) {
             console.error("Error loading main page:", error);

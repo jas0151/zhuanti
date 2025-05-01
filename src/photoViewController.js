@@ -15,36 +15,48 @@ class PhotoViewController {
             
             if (!user) {
                 console.log(`User not found: ${userId}`);
-                return res.sendFile(path.join(__dirname, '../public/default-avatar.png'));
+                return res.sendFile(path.join(process.cwd(), 'public', 'default-avatar.png'));
             }
             
-            // Try several possible paths:
-            const possiblePaths = [
-                // Path from database
-                user.profile?.photo ? path.join(__dirname, '../uploads/profiles', user.profile.photo) : null,
-                // Fixed pattern path with jpg
-                path.join(__dirname, '../uploads/profiles', `profile_${userId}.jpg`),
-                // Fixed pattern path with png
-                path.join(__dirname, '../uploads/profiles', `profile_${userId}.png`),
-                // Fixed pattern path with jpeg
-                path.join(__dirname, '../uploads/profiles', `profile_${userId}.jpeg`)
-            ].filter(Boolean); // Remove null entries
+            // Check if user has a photo property with a value
+            if (!user.profile || !user.profile.photo) {
+                console.log(`No profile photo set for user: ${userId}`);
+                return res.sendFile(path.join(process.cwd(), 'public', 'default-avatar.png'));
+            }
             
-            // Try each path
-            for (const photoPath of possiblePaths) {
-                console.log(`Trying path: ${photoPath}`);
-                if (fs.existsSync(photoPath)) {
-                    console.log(`Photo found at: ${photoPath}`);
-                    return res.sendFile(photoPath);
-                }
+            console.log(`User photo filename: ${user.profile.photo}`);
+            
+            // First try: Direct path from storage structure
+            const photoPath = path.join(__dirname, '../uploads/profiles', user.profile.photo);
+            console.log(`Checking photo path: ${photoPath}`);
+            
+            if (fs.existsSync(photoPath)) {
+                console.log(`Photo found at: ${photoPath}`);
+                return res.sendFile(photoPath);
+            }
+            
+            // Second try: Try with the profile_{userId} pattern
+            const expectedFilename = `profile_${userId}${path.extname(user.profile.photo) || '.jpg'}`;
+            const patternPath = path.join(__dirname, '../uploads/profiles', expectedFilename);
+            console.log(`Checking alternative photo path: ${patternPath}`);
+            
+            if (fs.existsSync(patternPath)) {
+                console.log(`Photo found at pattern path: ${patternPath}`);
+                
+                // Update database with consistent path
+                await this.userModel.findByIdAndUpdate(userId, {
+                    'profile.photo': expectedFilename
+                });
+                
+                return res.sendFile(patternPath);
             }
             
             // If no path works, return default
-            console.log(`No profile photo found for user: ${userId}`);
-            return res.sendFile(path.join(__dirname, '../public/default-avatar.png'));
+            console.log(`No profile photo found for user: ${userId}, using default`);
+            return res.sendFile(path.join(process.cwd(), 'public', 'default-avatar.png'));
         } catch (error) {
             console.error(`Error retrieving profile photo:`, error);
-            return res.sendFile(path.join(__dirname, '../public/default-avatar.png'));
+            return res.sendFile(path.join(process.cwd(), 'public', 'default-avatar.png'));
         }
     }
 
@@ -59,7 +71,9 @@ class PhotoViewController {
             }
             
             // Find the photo in the user's gallery
-            const photo = user.profile.galleryPhotos.find(p => p.id === photoId || p._id.toString() === photoId);
+            const photo = user.profile.galleryPhotos.find(p => 
+                p.id === photoId || (p._id && p._id.toString() === photoId)
+            );
             
             if (!photo || !photo.filename) {
                 return res.status(404).send("Photo not found");

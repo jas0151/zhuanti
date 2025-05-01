@@ -5,93 +5,304 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CampusMatch - Connect with Your College Community</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="home.css">
 </head>
 <body>
     {{#if userId}}
-    <!-- Logged-in user navbar -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="/" class="nav-logo">CampusMatch</a>
-            <div class="nav-menu">
-                <ul class="nav-list">
-                    <li><a href="/main"><i class='bx bx-home'></i> Dashboard</a></li>
-                    <li><a href="/gallery"><i class='bx bx-images'></i> Gallery</a></li>
-                    <li><a href="/matches"><i class='bx bx-heart'></i> Matches</a></li>
-                    <li><a href="/logout" class="nav-signup"><i class='bx bx-log-out'></i> Logout</a></li>
-                </ul>
-            </div>
+<!-- Standardized Navbar for logged-in users -->
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-logo">CampusMatch</a>
+        <div class="nav-menu">
+            <ul class="nav-list">
+                <li><a href="/main" class="nav-link active"><i class='bx bx-home'></i> <span>Dashboard</span></a></li>
+                <li><a href="/gallery" class="nav-link"><i class='bx bx-images'></i> <span>Gallery</span></a></li>
+                <li><a href="/matches" class="nav-link"><i class='bx bx-heart'></i> <span>Matches</span></a></li>
+                <li><a href="/connections" class="nav-link"><i class='bx bx-user-check'></i> <span>Connections</span></a></li>
+                <li><a href="/logout" class="nav-signup"><i class='bx bx-log-out'></i> <span>Logout</span></a></li>
+            </ul>
         </div>
-    </nav>
-    {{else}}
-    <!-- Non-logged-in user navbar -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="/" class="nav-logo">CampusMatch</a>
-            <div class="nav-menu">
-                <ul class="nav-list">
-                    <li><a href="#features"><i class='bx bx-list-check'></i> Features</a></li>
-                    <li><a href="#how-it-works"><i class='bx bx-question-mark'></i> How It Works</a></li>
-                    <li><a href="login"><i class='bx bx-log-in'></i> Login</a></li>
-                    <li><a href="signup" class="nav-signup"><i class='bx bx-user-plus'></i> Get Started</a></li>
-                </ul>
-            </div>
+        <div class="mobile-menu-toggle">
+            <i class='bx bx-menu'></i>
         </div>
-    </nav>
-    {{/if}}
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CampusMatch - Connect with Your College Community</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-    <link rel="stylesheet" href="home.css">
-</head>
-<body>
+    </div>
+</nav>
+{{else}}
+<!-- Non-logged-in user navbar -->
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-logo">CampusMatch</a>
+        <div class="nav-menu">
+            <ul class="nav-list">
+                <li><a href="#features" class="nav-link"><span>Features</span></a></li>
+                <li><a href="#how-it-works" class="nav-link"><span>How It Works</span></a></li>
+                <li><a href="#testimonials" class="nav-link"> <span>Testimonials</span></a></li>
+                <li><a href="login" class="nav-link"><span>Login</span></a></li>
+                <li><a href="signup" class="nav-signup"></i> <span>Get Started</span></a></li>
+            </ul>
+        </div>
+        <div class="mobile-menu-toggle">
+            <i class='bx bx-menu'></i>
+        </div>
+    </div>
+</nav>
+{{/if}}
 
+    <!-- Hero Section with Animated Background -->
     <section class="hero">
+        <div class="hero-bg">
+            <div class="animation-element circle-1"></div>
+            <div class="animation-element circle-2"></div>
+            <div class="animation-element circle-3"></div>
+            <div class="animation-element wave"></div>
+        </div>
         <div class="hero-content">
             <h1>Find Your Perfect Match on Campus</h1>
             <p>Connect with like-minded students, discover study groups, and make lasting friendships through our intelligent matching system.</p>
-            <a href="signup" class="hero-btn">Start Matching</a>
+            <div class="hero-buttons">
+                <a href="signup" class="hero-btn primary">Start Matching</a>
+                <a href="#how-it-works" class="hero-btn secondary">Learn More</a>
+            </div>
         </div>
     </section>
 
+    <!-- Features Section with Cards -->
     <section id="features" class="features">
-        <h2>Why Choose CampusMatch?</h2>
+        <div class="section-header">
+            <h2>Why Choose CampusMatch?</h2>
+            <p>Our platform is designed to make campus connections meaningful and efficient</p>
+        </div>
         <div class="features-grid">
             <div class="feature-card">
-                <i class="fas fa-robot"></i>
+                <div class="feature-icon">
+                    <i class='bx bx-brain'></i>
+                </div>
                 <h3>Smart Matching</h3>
                 <p>Our AI-powered algorithm connects you with peers who share your academic interests and lifestyle preferences.</p>
             </div>
             <div class="feature-card">
-                <i class="fas fa-comments"></i>
+                <div class="feature-icon">
+                    <i class='bx bx-message-rounded-dots'></i>
+                </div>
                 <h3>Secure Chat</h3>
                 <p>Connect safely with verified students through our encrypted messaging platform.</p>
             </div>
             <div class="feature-card">
-                <i class="fas fa-house-user"></i>
+                <div class="feature-icon">
+                    <i class='bx bx-home-heart'></i>
+                </div>
                 <h3>Roommate Finder</h3>
                 <p>Find your perfect roommate using our comprehensive matching system that considers living habits and preferences.</p>
             </div>
             <div class="feature-card">
-                <i class="fas fa-users"></i>
+                <div class="feature-icon">
+                    <i class='bx bx-book-reader'></i>
+                </div>
                 <h3>Study Groups</h3>
                 <p>Join or create study groups for your courses and connect with classmates who share your academic goals.</p>
             </div>
         </div>
     </section>
 
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="how-it-works">
+        <div class="section-header">
+            <h2>How CampusMatch Works</h2>
+            <p>Our simple three-step process to finding your campus connections</p>
+        </div>
+        <div class="steps-container">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-icon">
+                    <i class='bx bx-user-circle'></i>
+                </div>
+                <h3>Create Your Profile</h3>
+                <p>Sign up and build your profile with your interests, academic information, and preferences.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-icon">
+                    <i class='bx bx-search-alt'></i>
+                </div>
+                <h3>Discover Matches</h3>
+                <p>Our algorithm will find students with similar interests and compatible preferences.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-icon">
+                    <i class='bx bx-conversation'></i>
+                </div>
+                <h3>Connect & Meet</h3>
+                <p>Send connection requests, chat with your matches, and meet on campus to build lasting friendships.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonial Section -->
+    <section id="testimonials" class="testimonials">
+        <div class="section-header">
+            <h2>What Students Say</h2>
+            <p>Hear from students who found meaningful connections on CampusMatch</p>
+        </div>
+        <div class="testimonial-carousel">
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <p>"CampusMatch helped me find my study group for Biology 101. We've been supporting each other all semester, and my grades have improved significantly!"</p>
+                </div>
+                <div class="testimonial-author">
+                    <img src="/images/testimonial-1.jpg" alt="Student" class="testimonial-image">
+                    <div class="testimonial-info">
+                        <h4>Sarah J.</h4>
+                        <p>Stanford University</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <p>"I was nervous about finding a roommate for my sophomore year. CampusMatch connected me with someone who shares my interests and lifestyle preferences, and we get along great!"</p>
+                </div>
+                <div class="testimonial-author">
+                    <img src="/images/testimonial-2.jpg" alt="Student" class="testimonial-image">
+                    <div class="testimonial-info">
+                        <h4>Alex M.</h4>
+                        <p>UCLA</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <p>"As an international student, I was worried about making friends. CampusMatch helped me connect with people who speak my language and share my cultural background."</p>
+                </div>
+                <div class="testimonial-author">
+                    <img src="/images/testimonial-3.jpg" alt="Student" class="testimonial-image">
+                    <div class="testimonial-info">
+                        <h4>Mei L.</h4>
+                        <p>University of Michigan</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="carousel-controls">
+            <button class="carousel-btn prev"><i class='bx bx-chevron-left'></i></button>
+            <div class="carousel-dots">
+                <span class="dot active"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </div>
+            <button class="carousel-btn next"><i class='bx bx-chevron-right'></i></button>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2>Ready to Find Your Campus Connection?</h2>
+            <p>Join thousands of students who are making meaningful connections every day</p>
+            <a href="signup" class="cta-button">Create Your Free Account</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
     <footer class="footer">
-        <div class="container">
-            <h4>Connect With Us</h4>
-            <div class="social-links">
-                <a href="#"><i class="fab fa-instagram"></i></a>
-                <a href="#"><i class="fab fa-twitter"></i></a>
-                <a href="#"><i class="fab fa-linkedin"></i></a>
+        <div class="footer-container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <a href="/" class="footer-logo">CampusMatch</a>
+                    <p>Connecting students across campuses for better college experiences.</p>
+                    <div class="social-links">
+                        <a href="#"><i class='bx bxl-instagram'></i></a>
+                        <a href="#"><i class='bx bxl-twitter'></i></a>
+                        <a href="#"><i class='bx bxl-facebook'></i></a>
+                        <a href="#"><i class='bx bxl-linkedin'></i></a>
+                    </div>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Features</h4>
+                        <ul>
+                            <li><a href="#">Matching System</a></li>
+                            <li><a href="#">Secure Messaging</a></li>
+                            <li><a href="#">Study Groups</a></li>
+                            <li><a href="#">Roommate Finding</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Resources</h4>
+                        <ul>
+                            <li><a href="#">Campus Guide</a></li>
+                            <li><a href="#">Safety Tips</a></li>
+                            <li><a href="#">Success Stories</a></li>
+                            <li><a href="#">Blog</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Company</h4>
+                        <ul>
+                            <li><a href="#">About Us</a></li>
+                            <li><a href="#">Contact</a></li>
+                            <li><a href="#">Careers</a></li>
+                            <li><a href="#">Privacy Policy</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 CampusMatch. All rights reserved.</p>
             </div>
         </div>
     </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Mobile Menu Toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.querySelector('.mobile-menu-toggle');
+            const navMenu = document.querySelector('.nav-menu');
+            
+            if (menuToggle && navMenu) {
+                menuToggle.addEventListener('click', function() {
+                    navMenu.classList.toggle('active');
+                    this.classList.toggle('active');
+                });
+            }
+            
+            // Testimonial Carousel
+            const dots = document.querySelectorAll('.carousel-dots .dot');
+            const prevBtn = document.querySelector('.carousel-btn.prev');
+            const nextBtn = document.querySelector('.carousel-btn.next');
+            const testimonials = document.querySelector('.testimonial-carousel');
+            let currentSlide = 0;
+            
+            function showSlide(index) {
+                if (index < 0) index = dots.length - 1;
+                if (index >= dots.length) index = 0;
+                
+                currentSlide = index;
+                
+                // Update dots
+                dots.forEach((dot, i) => {
+                    dot.classList.toggle('active', i === currentSlide);
+                });
+                
+                // Move testimonial container
+                testimonials.style.transform = `translateX(-${currentSlide * 100}%)`;
+            }
+            
+            // Set up dot navigation
+            dots.forEach((dot, index) => {
+                dot.addEventListener('click', () => showSlide(index));
+            });
+            
+            // Set up arrow navigation
+            if (prevBtn) prevBtn.addEventListener('click', () => showSlide(currentSlide - 1));
+            if (nextBtn) nextBtn.addEventListener('click', () => showSlide(currentSlide + 1));
+            
+            // Auto-advance carousel
+            setInterval(() => {
+                showSlide(currentSlide + 1);
+            }, 5000);
+        });
+    </script>
 </body>
 </html>

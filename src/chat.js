@@ -1,19 +1,7 @@
-// Updated chat.js with improved real-time functionality
-
+// Enhanced chat.js with improved error handling and reliability
 document.addEventListener('DOMContentLoaded', () => {
-    // Debug mode - set to true during development
+    // Debug mode - enable with Ctrl+Shift+D
     const DEBUG = true;
-
-    // Custom debug logging function
-    function logDebug(message, data) {
-        if (!DEBUG) return;
-        
-        if (data) {
-            console.log(`[CHAT DEBUG] ${message}`, data);
-        } else {
-            console.log(`[CHAT DEBUG] ${message}`);
-        }
-    }
     
     // DOM elements
     const messagesContainer = document.getElementById('messagesContainer');
@@ -30,11 +18,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentUserId = document.body.dataset.currentUserId;
     const otherUserId = document.body.dataset.otherUserId;
     
+    // Make IDs accessible in console for debugging
+    window.currentUserId = currentUserId;
+    window.otherUserId = otherUserId;
+    
     // Socket.io connection
     let socket;
     let typingTimeout;
     let reconnectInterval;
     let pendingMessages = [];
+    
+    // Debug logging
+    function logDebug(message, data) {
+        if (!DEBUG) return;
+        
+        if (data) {
+            console.log(`[CHAT DEBUG] ${message}`, data);
+        } else {
+            console.log(`[CHAT DEBUG] ${message}`);
+        }
+    }
+    
+    // Validate required parameters
+    if (!currentUserId || !otherUserId) {
+        console.error('Missing user IDs for chat:', { currentUserId, otherUserId });
+        showErrorToast('Chat initialization failed: Missing user information');
+        
+        if (emptyChatDiv) {
+            emptyChatDiv.innerHTML = `
+                <div class="empty-chat-icon">
+                    <i class="bx bx-error-circle" style="color: #ef4444;"></i>
+                </div>
+                <h3>Chat Initialization Failed</h3>
+                <p>Could not identify the users for this chat. Please try refreshing the page.</p>
+                <button id="reload-page" style="padding: 8px 16px; background: #4F46E5; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 20px;">Reload Page</button>
+            `;
+            
+            document.getElementById('reload-page')?.addEventListener('click', () => {
+                window.location.reload();
+            });
+        }
+        
+        return; // Stop initialization
+    }
     
     // Initialize Socket.IO connection
     function initializeSocket() {
@@ -48,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 socket.removeAllListeners();
             }
             
-            // Connect to Socket.IO server
+            // Connect to Socket.IO server with improved options
             socket = io({
                 reconnectionAttempts: 5,
                 reconnectionDelay: 1000,
@@ -75,9 +101,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     logDebug(`Attempting to send ${pendingMessages.length} pending messages`);
                     sendPendingMessages();
                 }
-                
-                // Start a ping interval to keep connection alive
-                startPingInterval();
+            });
+            
+            socket.on('connect_error', (error) => {
+                logDebug('Socket.IO connection error:', error);
+                updateConnectionStatus('disconnected');
+                showErrorToast(`Connection error: ${error.message}`);
             });
             
             socket.on('disconnect', (reason) => {
@@ -96,11 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }, 5000);
                 }
-            });
-            
-            socket.on('connect_error', (error) => {
-                logDebug('Socket.IO connection error:', error);
-                updateConnectionStatus('disconnected');
             });
             
             socket.on('error', (error) => {
@@ -127,6 +151,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.sender === currentUserId) {
                     // Update our own message status
                     updateMessageStatus(data._id, 'sent');
+                    
+                    // Remove from pending messages if it exists
+                    pendingMessages = pendingMessages.filter(msg => msg.id !== data._id);
                 } else {
                     // Add the other user's message to UI
                     addMessageToUI({
@@ -161,14 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateMessageStatus(data.messageId, 'delivered');
             });
             
-            // Handle multiple messages delivered
-            socket.on('messages delivered', (data) => {
-                logDebug('Multiple messages delivered:', data);
-                data.messageIds.forEach(id => {
-                    updateMessageStatus(id, 'delivered');
-                });
-            });
-            
             // Handle typing indicators
             socket.on('typing', (data) => {
                 if (data.userId === otherUserId) {
@@ -197,41 +216,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             
-            // Pong for connection keep-alive
-            socket.on('pong', (data) => {
-                logDebug('Pong received, connection active');
-            });
-            
-            // Successfully reconnected
-            socket.on('reconnected', (data) => {
-                logDebug('Reconnected to server:', data);
-                updateConnectionStatus('connected');
-                
-                // Send any pending messages
-                if (pendingMessages.length > 0) {
-                    sendPendingMessages();
-                }
-            });
         } catch (error) {
             logDebug('Error initializing Socket.IO:', error);
             updateConnectionStatus('disconnected');
-            showErrorToast('Failed to connect to chat server');
+            showErrorToast('Failed to connect to chat server: ' + error.message);
         }
-    }
-    
-    // Function to keep connection alive with periodic pings
-    function startPingInterval() {
-        // Clear any existing interval
-        if (window.pingInterval) {
-            clearInterval(window.pingInterval);
-        }
-        
-        // Set up new ping interval
-        window.pingInterval = setInterval(() => {
-            if (socket && socket.connected) {
-                socket.emit('ping', { time: new Date() });
-            }
-        }, 30000); // 30 seconds
     }
     
     // Function to send pending messages
@@ -254,6 +243,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    // Show debug panel with Ctrl+Shift+D
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+            checkSocketConnection();
+        }
+    });
+    
     // Debug function to check socket connection
     function checkSocketConnection() {
         logDebug('Checking socket connection...');
@@ -267,31 +263,37 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Display connection details
         const details = document.createElement('div');
-        details.style.position = 'fixed';
-        details.style.bottom = '70px';
-        details.style.right = '20px';
-        details.style.padding = '10px';
-        details.style.background = 'rgba(0,0,0,0.8)';
-        details.style.color = 'white';
-        details.style.borderRadius = '5px';
-        details.style.fontSize = '12px';
-        details.style.zIndex = '9999';
+        details.className = 'debug-panel';
         details.innerHTML = `
-            <p><strong>Socket Debug:</strong></p>
-            <p>Connection: ${socket.connected ? 'Connected' : 'Disconnected'}</p>
-            <p>Socket ID: ${socket.id || 'N/A'}</p>
-            <p>Transport: ${socket.io?.engine?.transport?.name || 'N/A'}</p>
-            <p>Pending Messages: ${pendingMessages.length}</p>
-            <button id="reconnectBtn" style="margin-top:5px;">Reconnect</button>
-            <button id="closeDebugBtn" style="margin-left:5px;">Close</button>
+            <h3>Chat Debug Panel</h3>
+            <p><strong>Socket Connection:</strong> ${socket.connected ? 'Connected' : 'Disconnected'}</p>
+            <p><strong>Socket ID:</strong> ${socket.id || 'None'}</p>
+            <p><strong>Transport:</strong> ${socket.io?.engine?.transport?.name || 'N/A'}</p>
+            <p><strong>Current User:</strong> ${currentUserId}</p>
+            <p><strong>Other User:</strong> ${otherUserId}</p>
+            <p><strong>Pending Messages:</strong> ${pendingMessages.length}</p>
+            <div style="margin-top: 10px;">
+                <button id="reconnectBtn">Reconnect Socket</button>
+                <button id="reloadMsgsBtn">Reload Messages</button>
+                <button id="closeDebugBtn">Close Panel</button>
+            </div>
         `;
+        
+        // Remove existing panel if present
+        const existingPanel = document.querySelector('.debug-panel');
+        if (existingPanel) {
+            existingPanel.remove();
+        }
         
         document.body.appendChild(details);
         
         document.getElementById('reconnectBtn').addEventListener('click', () => {
-            details.remove();
             socket.disconnect();
             setTimeout(initializeSocket, 500);
+        });
+        
+        document.getElementById('reloadMsgsBtn').addEventListener('click', () => {
+            loadExistingMessages(true);
         });
         
         document.getElementById('closeDebugBtn').addEventListener('click', () => {
@@ -300,13 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         return socket.connected;
     }
-    
-    // Keyboard shortcut for debug panel (Ctrl+Shift+D)
-    document.addEventListener('keydown', (e) => {
-        if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-            checkSocketConnection();
-        }
-    });
     
     // Initialize Socket.IO
     initializeSocket();
@@ -387,20 +382,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Load existing messages from the server
-    function loadExistingMessages() {
+    function loadExistingMessages(isForceReload = false) {
+        // Show loading indicator or replace empty chat with loading indicator
+        if (isForceReload) {
+            // Clear existing messages if force reloading
+            while (messagesContainer.firstChild) {
+                messagesContainer.removeChild(messagesContainer.firstChild);
+            }
+        }
+        
+        // Add loading indicator
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.className = 'loading-indicator';
+        loadingIndicator.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Loading messages...';
+        messagesContainer.appendChild(loadingIndicator);
+        
+        logDebug(`Loading messages for conversation with ${otherUserId}`);
+        
         fetch(`/api/messages/${otherUserId}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                // Remove loading indicator
+                const loadingElem = messagesContainer.querySelector('.loading-indicator');
+                if (loadingElem) loadingElem.remove();
+                
                 if (data.success && data.messages && data.messages.length > 0) {
-                    // Clear any existing messages
-                    while (messagesContainer.firstChild) {
-                        messagesContainer.removeChild(messagesContainer.firstChild);
-                    }
-                    
                     // Hide empty chat message
                     if (emptyChatDiv) {
                         emptyChatDiv.style.display = 'none';
                     }
+                    
+                    logDebug(`Loaded ${data.messages.length} messages`);
                     
                     // Add messages to UI
                     data.messages.forEach(msg => {
@@ -419,12 +436,42 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Mark all messages as read
                     fetch(`/api/messages/read/${otherUserId}`, {
                         method: 'POST'
+                    }).catch(error => {
+                        logDebug('Error marking messages as read:', error);
                     });
+                } else {
+                    logDebug('No messages found or empty response');
+                    
+                    // Show empty chat if we don't have messages
+                    if (emptyChatDiv && (isForceReload || messagesContainer.childElementCount === 0)) {
+                        emptyChatDiv.style.display = 'flex';
+                    }
                 }
             })
             .catch(error => {
                 logDebug('Error loading messages:', error);
-                showErrorToast('Failed to load messages');
+                
+                // Remove loading indicator
+                const loadingElem = messagesContainer.querySelector('.loading-indicator');
+                if (loadingElem) loadingElem.remove();
+                
+                // Add error message
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'error-message';
+                errorMsg.innerHTML = `
+                    <i class="bx bx-error-circle"></i> Failed to load messages. 
+                    <a href="#" class="retry-link">Retry</a>
+                `;
+                messagesContainer.appendChild(errorMsg);
+                
+                // Add retry link handler
+                errorMsg.querySelector('.retry-link').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    errorMsg.remove();
+                    loadExistingMessages(isForceReload);
+                });
+                
+                showErrorToast('Failed to load messages: ' + error.message);
             });
     }
     
@@ -478,6 +525,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 sender: currentUserId,
                 receiver: otherUserId
             });
+            
+            // Set timeout to detect if message is not acknowledged
+            setTimeout(() => {
+                const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+                if (messageElement && messageElement.querySelector('.status-sending')) {
+                    logDebug(`Message ${messageId} not acknowledged, adding to pending queue`);
+                    // Add to pending queue if not acknowledged after 5 seconds
+                    if (!pendingMessages.some(msg => msg.id === messageId)) {
+                        pendingMessages.push(messageObj);
+                    }
+                }
+            }, 5000);
         } else {
             // Store message in pending queue
             pendingMessages.push(messageObj);
@@ -494,11 +553,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'GET'
             })
             .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}`);
+                }
+                return response.json().catch(() => ({ success: true })); // Handle non-JSON responses
+            })
+            .then(data => {
                 logDebug('HTTP message sent successfully');
+                updateMessageStatus(messageId, 'sent');
+                
+                // Remove from pending queue
+                pendingMessages = pendingMessages.filter(msg => msg.id !== messageId);
             })
             .catch(error => {
                 logDebug('Error sending message via HTTP:', error);
                 updateMessageStatus(messageId, 'error');
+                showErrorToast('Failed to send message: ' + error.message);
             });
         }
     }
@@ -524,7 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Check if message already exists
-        const existingMessage = document.getElementById(`msg-${id}`);
+        const existingMessage = document.querySelector(`[data-message-id="${id}"]`);
         if (existingMessage) {
             // Update existing message status
             updateMessageStatus(id, status);
@@ -534,7 +604,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Create message element
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${sender === currentUserId ? 'outgoing' : 'incoming'}`;
-        messageDiv.id = `msg-${id}`;
         messageDiv.dataset.messageId = id;
         
         // Format timestamp
@@ -579,7 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Update the status of a specific message
     function updateMessageStatus(messageId, status) {
-        const messageElement = document.getElementById(`msg-${messageId}`);
+        const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
         if (!messageElement) {
             logDebug(`Message element not found for ID: ${messageId}`);
             return;
@@ -671,6 +740,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const toast = document.createElement('div');
         toast.className = 'toast toast-error';
         toast.innerHTML = `
+            <i class="bx bx-error-circle"></i>
             <span>${message}</span>
             <button class="close-toast">×</button>
         `;
@@ -811,5 +881,156 @@ document.addEventListener('DOMContentLoaded', () => {
             e.target !== emojiButton) {
             emojiPicker.classList.remove('show');
         }
+    });
+    
+    // Load connection list for sidebar
+    function loadConnectionList() {
+        const connectionList = document.querySelector('.connection-list');
+        if (!connectionList) return;
+        
+        // Show loading state
+        connectionList.innerHTML = `
+            <div class="loading-connections">
+                <i class="bx bx-loader-alt bx-spin"></i>
+                <span>Loading connections...</span>
+            </div>
+        `;
+        
+        fetch('/connections/list')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.connections && data.connections.length > 0) {
+                    connectionList.innerHTML = '';
+                    
+                    data.connections.forEach(conn => {
+                        const connectionItem = document.createElement('a');
+                        connectionItem.href = `/chat/${conn.userId}`;
+                        connectionItem.className = `connection-item ${conn.userId === otherUserId ? 'active' : ''}`;
+                        
+                        connectionItem.innerHTML = `
+                            <div class="connection-avatar">
+                                <img src="${conn.photo ? `/photo/${conn.userId}` : '/default-avatar.png'}" alt="${conn.name}">
+                                <span class="status-indicator ${conn.isOnline ? 'online' : 'offline'}"></span>
+                            </div>
+                            <div class="connection-details">
+                                <div class="connection-name">${conn.name}</div>
+                                <div class="connection-preview">${conn.lastMessage || 'Start a conversation'}</div>
+                            </div>
+                            ${conn.unreadCount ? `<div class="unread-badge">${conn.unreadCount}</div>` : ''}
+                        `;
+                        
+                        connectionList.appendChild(connectionItem);
+                    });
+                } else {
+                    connectionList.innerHTML = `
+                        <div class="empty-connections">
+                            <p>You don't have any connections yet.</p>
+                            <a href="/matches" class="empty-action">Find Matches</a>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                logDebug('Error loading connections:', error);
+                connectionList.innerHTML = `
+                    <div class="empty-connections">
+                        <p>Failed to load connections.</p>
+                        <a href="#" class="empty-action retry-connections">Retry</a>
+                    </div>
+                `;
+                
+                connectionList.querySelector('.retry-connections')?.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    loadConnectionList();
+                });
+            });
+    }
+    
+    // Initialize connection list
+    loadConnectionList();
+    
+    // Handle search in connection list
+    const searchInput = document.querySelector('.search-box input');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            const connectionItems = document.querySelectorAll('.connection-item');
+            
+            if (query === '') {
+                // Show all connections
+                connectionItems.forEach(item => {
+                    item.style.display = '';
+                });
+                
+                // Remove any empty search results message
+                const emptyResults = document.querySelector('.empty-search-results');
+                if (emptyResults) emptyResults.remove();
+                return;
+            }
+            
+            let hasVisibleItems = false;
+            
+            // Filter connections
+            connectionItems.forEach(item => {
+                const name = item.querySelector('.connection-name').textContent.toLowerCase();
+                const preview = item.querySelector('.connection-preview').textContent.toLowerCase();
+                
+                if (name.includes(query) || preview.includes(query)) {
+                    item.style.display = '';
+                    hasVisibleItems = true;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Show message if no results
+            if (!hasVisibleItems) {
+                if (!document.querySelector('.empty-search-results')) {
+                    const emptyResults = document.createElement('div');
+                    emptyResults.className = 'empty-search-results';
+                    emptyResults.innerHTML = `
+                        <i class="bx bx-search-alt"></i>
+                        <p>No results found for "${query}"</p>
+                        <button class="clear-search">Clear Search</button>
+                    `;
+                    
+                    document.querySelector('.connection-list').appendChild(emptyResults);
+                    
+                    emptyResults.querySelector('.clear-search').addEventListener('click', () => {
+                        searchInput.value = '';
+                        searchInput.dispatchEvent(new Event('input'));
+                    });
+                }
+            } else {
+                // Remove empty results message if exists
+                const emptyResults = document.querySelector('.empty-search-results');
+                if (emptyResults) emptyResults.remove();
+            }
+        });
+    }
+    
+    // Mobile navigation toggles
+    const mobileToggle = document.querySelector('.mobile-sidebar-toggle');
+    const mobileInfoToggle = document.querySelector('.mobile-info-toggle');
+    const sidebar = document.querySelector('.chat-sidebar');
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    document.body.appendChild(overlay);
+    
+    if (mobileToggle && sidebar) {
+        mobileToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('show');
+        });
+    }
+    
+    overlay.addEventListener('click', () => {
+        if (sidebar) sidebar.classList.remove('active');
+        overlay.classList.remove('show');
     });
 });

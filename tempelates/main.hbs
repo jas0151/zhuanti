@@ -1,410 +1,248 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{title}} - CampusMatch</title>
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="/main.css">
-    {{#if additionalStyles}}
-        {{{additionalStyles}}}
-    {{/if}}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - CampusMatch</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/main.css">
 </head>
-<body data-user-id="{{session.userId}}" data-user-name="{{session.userName}}">
-    <!-- Standardized Navbar -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="/" class="nav-logo">CampusMatch</a>
-            <div class="nav-menu">
-                <ul class="nav-list">
-                    <li><a href="/main" class="nav-link active"><i class='bx bx-home'></i> <span>Dashboard</span></a></li>
-                    <li><a href="/gallery" class="nav-link"><i class='bx bx-images'></i> <span>Gallery</span></a></li>
-                    <li><a href="/matches" class="nav-link"><i class='bx bx-heart'></i> <span>Matches</span></a></li>
-                    <li><a href="/connections" class="nav-link"><i class='bx bx-user-check'></i> <span>Connections</span></a></li>
-                    <li><a href="/logout" class="nav-signup"><i class='bx bx-log-out'></i> <span>Logout</span></a></li>
-                </ul>
-            </div>
-            <div class="mobile-menu-toggle">
-                <i class='bx bx-menu'></i>
-            </div>
-        </div>
-    </nav>
 
-    <!-- Dashboard content -->
-    <div class="dashboard">
-        <div class="dashboard-container">
-            <!-- Welcome section -->
-            <div class="dashboard-header">
-                <div class="welcome-card">
-                    <div class="welcome-content">
-                        <h1>Welcome back, {{user.profile.firstName}}!</h1>
-                        <p>Your profile is {{profileCompletion}}% complete. Keep going to find better matches!</p>
-                    </div>
-                    <div class="welcome-image">
-                        <img src="/images/welcome-illustration.svg" alt="Welcome">
-                    </div>
-                </div>
-                
-                <!-- Quick stats -->
-                <div class="quick-stats">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class='bx bx-user-check'></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>Connections</h3>
-                            <div class="stat-value">{{connectionCount}}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class='bx bx-heart'></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>New Matches</h3>
-                            <div class="stat-value">{{newMatchCount}}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class='bx bx-message-rounded-dots'></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>Unread Messages</h3>
-                            <div class="stat-value">{{unreadMessageCount}}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Main dashboard content -->
-            <div class="dashboard-content">
-                <!-- Profile section -->
-                <div class="dashboard-section">
-                    <div class="section-header">
-                        <h2><i class='bx bx-user'></i> Your Profile</h2>
-                        <a href="/edit-profile" class="action-link">
-                            <span>Edit Profile</span> <i class='bx bx-chevron-right'></i>
-                        </a>
-                    </div>
-                    <div class="profile-card">
-                        <div class="profile-header">
-                            <div class="profile-avatar">
-                                {{#if user.profile.photo}}
-                                    <img src="/photo/{{user._id}}" alt="{{user.profile.firstName}} {{user.profile.lastName}}">
-                                {{else}}
-                                    <img src="/default-avatar.png" alt="Default Avatar">
-                                {{/if}}
-                            </div>
-                            <div class="profile-info">
-                                <h3>{{user.profile.firstName}} {{user.profile.lastName}}</h3>
-                                <div class="profile-subtitle">{{user.profile.university}}</div>
-                                <div class="profile-details">{{user.profile.major}}, Year {{user.profile.yearOfStudy}}</div>
-                                
-                                <div class="profile-completion">
-                                    <div class="completion-bar">
-                                        <div class="completion-progress" style="width: {{profileCompletion}}%;"></div>
-                                    </div>
-                                    <div class="completion-text">{{profileCompletion}}% complete</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {{#if user.profile.bio}}
-                            <div class="profile-bio">
-                                <h4>About me</h4>
-                                <p>{{user.profile.bio}}</p>
-                            </div>
-                        {{/if}}
-                    </div>
-                </div>
-                
-                <!-- Interests section -->
-                <div class="dashboard-section">
-                    <div class="section-header">
-                        <h2><i class='bx bx-bulb'></i> Your Interests</h2>
-                        <a href="/edit-interests" class="action-link">
-                            <span>Edit Interests</span> <i class='bx bx-chevron-right'></i>
-                        </a>
-                    </div>
-                    <div class="interests-card">
-                        {{#if hasInterests}}
-                            <div class="interests-grid">
-                                {{#if user.profile.interests.hobbies.length}}
-                                    <div class="interest-category">
-                                        <h4><i class='bx bx-joystick'></i> Hobbies</h4>
-                                        <div class="interest-tags">
-                                            {{#each user.profile.interests.hobbies}}
-                                                <span class="interest-tag">{{this}}</span>
-                                            {{/each}}
-                                        </div>
-                                    </div>
-                                {{/if}}
-                                
-                                {{#if user.profile.interests.classes.length}}
-                                    <div class="interest-category">
-                                        <h4><i class='bx bx-book'></i> Classes</h4>
-                                        <div class="interest-tags">
-                                            {{#each user.profile.interests.classes}}
-                                                <span class="interest-tag">{{this}}</span>
-                                            {{/each}}
-                                        </div>
-                                    </div>
-                                {{/if}}
-                                
-                                {{#if user.profile.interests.clubs.length}}
-                                    <div class="interest-category">
-                                        <h4><i class='bx bx-group'></i> Clubs</h4>
-                                        <div class="interest-tags">
-                                            {{#each user.profile.interests.clubs}}
-                                                <span class="interest-tag">{{this}}</span>
-                                            {{/each}}
-                                        </div>
-                                    </div>
-                                {{/if}}
-                                
-                                {{#if user.profile.interests.languages.length}}
-                                    <div class="interest-category">
-                                        <h4><i class='bx bx-globe'></i> Languages</h4>
-                                        <div class="interest-tags">
-                                            {{#each user.profile.interests.languages}}
-                                                <span class="interest-tag">{{this}}</span>
-                                            {{/each}}
-                                        </div>
-                                    </div>
-                                {{/if}}
-                            </div>
-                        {{else}}
-                            <div class="empty-interests">
-                                <p>You haven't added any interests yet. Add some to find better matches!</p>
-                                <a href="/interests" class="action-btn">Add Interests</a>
-                            </div>
-                        {{/if}}
-                    </div>
-                </div>
-                
-                <!-- Gallery Preview -->
-                <div class="dashboard-section">
-                    <div class="section-header">
-                        <h2><i class='bx bx-images'></i> Your Gallery</h2>
-                        <a href="/gallery" class="action-link">
-                            <span>Manage Gallery</span> <i class='bx bx-chevron-right'></i>
-                        </a>
-                    </div>
-                    <div class="gallery-card">
-                        {{#if galleryPhotos.length}}
-                            <div class="gallery-grid">
-                                {{#each galleryPhotos}}
-                                    <div class="gallery-item {{#unless this.isPublic}}private{{/unless}}">
-                                        <img src="/gallery-photo/{{../user._id}}/{{this._id}}" alt="Gallery photo">
-                                        {{#unless this.isPublic}}
-                                            <div class="privacy-badge">
-                                                <i class='bx bx-lock-alt'></i>
-                                            </div>
-                                        {{/unless}}
-                                    </div>
-                                {{/each}}
-                            </div>
-                        {{else}}
-                            <div class="empty-gallery">
-                                <i class='bx bx-image-add'></i>
-                                <p>You haven't added any photos to your gallery yet.</p>
-                                <a href="/gallery" class="action-btn">Add Photos</a>
-                            </div>
-                        {{/if}}
-                    </div>
-                </div>
-                
-                <!-- Match Preview -->
-                <div class="dashboard-section">
-                    <div class="section-header">
-                        <h2><i class='bx bx-heart'></i> Your Matches</h2>
-                        <a href="/matches" class="action-link">
-                            <span>View All Matches</span> <i class='bx bx-chevron-right'></i>
-                        </a>
-                    </div>
-                    
-                    {{#if matches.length}}
-                        <div class="matches-preview">
-                            <div class="match-card-container">
-                                {{#each matches}}
-                                    <div class="match-card">
-                                        <div class="match-photo-wrapper">
-                                            <div class="match-photo">
-                                                {{#if this.photo}}
-                                                    <img src="/photo/{{this._id}}" alt="{{this.profile.firstName}} {{this.profile.lastName}}">
-                                                {{else}}
-                                                    <img src="/default-avatar.png" alt="Default Avatar" class="fallback-avatar">
-                                                {{/if}}
-                                            </div>
-                                            <div class="match-score-badge">
-                                                <svg viewBox="0 0 36 36">
-                                                    <path class="score-circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#f3f4f6" stroke-width="2"></path>
-                                                    <path class="score-circle-progress" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#4F46E5" stroke-width="2" stroke-dasharray="100" stroke-dashoffset="{{subtract 100 this.matchScore}}"></path>
-                                                </svg>
-                                                <span class="match-score-text">{{this.matchScore}}%</span>
-                                            </div>
-                                        </div>
-                                        <div class="match-info">
-                                            <h3>{{this.profile.firstName}} {{this.profile.lastName}}</h3>
-                                            <div class="match-details">
-                                                <div class="match-university">
-                                                    <i class='bx bx-school'></i>
-                                                    <span>{{this.profile.university}}</span>
-                                                </div>
-                                                <div class="match-major">
-                                                    <i class='bx bx-book'></i>
-                                                    <span>{{this.profile.major}}, Year {{this.profile.yearOfStudy}}</span>
-                                                </div>
-                                            </div>
-                                            <div class="match-interests">
-                                                {{#each this.commonInterests}}
-                                                    <span class="interest-chip">{{this}}</span>
-                                                {{/each}}
-                                                {{#if this.moreInterests}}
-                                                    <span class="interest-more">+{{this.moreInterests}}</span>
-                                                {{/if}}
-                                            </div>
-                                            <a href="/view-profile/{{this._id}}" class="view-profile-btn">
-                                                <span>View Profile</span>
-                                                <i class='bx bx-right-arrow-alt'></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                {{/each}}
-                            </div>
-                            
-                            <div class="matches-footer">
-                                <a href="/matches" class="view-all-matches">
-                                    <span>View All Matches</span>
-                                    <i class='bx bx-right-arrow-alt'></i>
-                                </a>
-                            </div>
-                        </div>
-                    {{else}}
-                        <div class="empty-matches">
-                            <i class='bx bx-heart'></i>
-                            <p>No matches found yet</p>
-                            <div class="empty-matches-desc">Complete your profile and add more interests to increase your chances of finding matches.</div>
-                            <div class="empty-matches-actions">
-                                <a href="/edit-profile" class="action-btn">
-                                    <i class='bx bx-user'></i>
-                                    <span>Complete Profile</span>
-                                </a>
-                                <a href="/interests" class="action-btn secondary">
-                                    <i class='bx bx-bulb'></i>
-                                    <span>Update Interests</span>
-                                </a>
-                            </div>
-                        </div>
-                    {{/if}}
-                </div>
-            </div>
-        </div>
+<body data-user-id="{{userId}}" data-user-name="{{userName}}">
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-logo">CampusMatch</a>
+      <ul class="nav-list">
+        <li><a href="/main" class="nav-link active"><i class='bx bx-home'></i><span>Dashboard</span></a></li>
+        <li><a href="/gallery" class="nav-link"><i class='bx bx-images'></i><span>Gallery</span></a></li>
+        <li><a href="/matches" class="nav-link"><i class='bx bx-heart'></i><span>Matches</span></a></li>
+        <li><a href="/connections" class="nav-link"><i class='bx bx-user-check'></i><span>Connections</span></a></li>
+      </ul>
+      <a href="/logout" class="nav-signup"><i class='bx bx-log-out'></i><span>Logout</span></a>
+      <div class="mobile-menu-toggle">
+        <i class='bx bx-menu'></i>
+      </div>
     </div>
-    
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-container">
-            <div class="footer-content">
-                <div class="footer-logo">
-                    <a href="/">CampusMatch</a>
-                    <p>Connect with fellow students who share your interests and passions.</p>
-                    <div class="social-links">
-                        <a href="#"><i class='bx bxl-facebook'></i></a>
-                        <a href="#"><i class='bx bxl-twitter'></i></a>
-                        <a href="#"><i class='bx bxl-instagram'></i></a>
-                        <a href="#"><i class='bx bxl-linkedin'></i></a>
-                    </div>
-                </div>
-                <div class="footer-links">
-                    <div class="footer-section">
-                        <h4>Features</h4>
-                        <ul>
-                            <li><a href="/matches">Matching System</a></li>
-                            <li><a href="/connections">Connections</a></li>
-                            <li><a href="/gallery">Photo Gallery</a></li>
-                            <li><a href="/chat">Messaging</a></li>
-                        </ul>
-                    </div>
-                    <div class="footer-section">
-                        <h4>About</h4>
-                        <ul>
-                            <li><a href="#">Our Story</a></li>
-                            <li><a href="#">Privacy Policy</a></li>
-                            <li><a href="#">Terms of Service</a></li>
-                            <li><a href="#">Contact Us</a></li>
-                        </ul>
-                    </div>
-                    <div class="footer-section">
-                        <h4>Support</h4>
-                        <ul>
-                            <li><a href="#">Help Center</a></li>
-                            <li><a href="#">Safety Tips</a></li>
-                            <li><a href="#">Report an Issue</a></li>
-                            <li><a href="#">FAQ</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2025 CampusMatch. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
+  </nav>
 
-    {{#if successMessage}}
-        <div class="success-toast {{#if showSuccess}}show{{/if}}">
-            <i class='bx bx-check-circle'></i>
-            <span>{{successMessage}}</span>
-            <button class="close-toast">
-                <i class='bx bx-x'></i>
-            </button>
-        </div>
-    {{/if}}
+  <!-- Main Content -->
+  <main class="main-content">
 
-    <!-- Base scripts -->
-    <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/session-validator.js"></script>
-    
-    {{#if additionalScripts}}
-        {{{additionalScripts}}}
-    {{/if}}
-    
-    <script>
-        // Success toast handling
-        document.addEventListener('DOMContentLoaded', function() {
-            const toast = document.querySelector('.success-toast');
-            const closeToast = document.querySelector('.close-toast');
-            
-            if (toast) {
-                // Auto hide toast after 5 seconds
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 5000);
-                
-                // Handle close button
-                if (closeToast) {
-                    closeToast.addEventListener('click', () => {
-                        toast.classList.remove('show');
-                    });
-                }
-            }
-            
-            // Mobile menu toggle
-            const menuToggle = document.querySelector('.mobile-menu-toggle');
-            const navMenu = document.querySelector('.nav-menu');
-            
-            if (menuToggle && navMenu) {
-                menuToggle.addEventListener('click', () => {
-                    navMenu.classList.toggle('active');
-                    menuToggle.classList.toggle('active');
-                });
-            }
-        });
-    </script>
+    <!-- Welcome Section -->
+    <section class="welcome-section">
+      <div class="welcome-card">
+        <div class="welcome-bg">
+          <div class="animation-element circle-1"></div>
+          <div class="animation-element circle-2"></div>
+          <div class="animation-element circle-3"></div>
+          <div class="animation-element shape-1"></div>
+          <div class="animation-element shape-2"></div>
+        </div>
+        <div class="welcome-content">
+          <h1>Welcome back, {{firstName}}!</h1>
+          <p>Ready to make meaningful connections today?</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Content Grid -->
+    <div class="content-grid">
+
+      <!-- Left Column -->
+      <div class="main-column">
+
+        <!-- Discover New Matches -->
+        <section class="card-section discover-section">
+          <div class="section-header">
+            <h2>Discover New Matches</h2>
+            <a href="/matches" class="view-all">View All</a>
+          </div>
+
+          <div class="matches-container">
+            {{#each recommendedMatches}}
+            <div class="match-card" data-user-id="{{this.user._id}}">
+              <div class="match-photo">
+                <div class="avatar-placeholder">
+                  <i class='bx bx-user'></i>
+                </div>
+                <div class="match-compatibility">
+                  <span>{{this.matchScore}}%</span>
+                </div>
+              </div>
+              <div class="match-info">
+                <h3>{{this.user.profile.firstName}} {{this.user.profile.lastName}}, {{this.user.profile.age}}</h3>
+                <p class="match-major">{{this.user.profile.major}}</p>
+                <div class="interests-tags">
+                  {{#each this.commonInterests.hobbies}}
+                  <span class="tag">{{this}}</span>
+                  {{/each}}
+                </div>
+              </div>
+            </div>
+            {{else}}
+            <!-- Default Match Cards -->
+            <div class="match-card">
+              <div class="match-photo">
+                <div class="avatar-placeholder">
+                  <i class='bx bx-user'></i>
+                </div>
+                <div class="match-compatibility"><span>92%</span></div>
+              </div>
+              <div class="match-info">
+                <h3>Sarah Johnson 21</h3>
+                <p class="match-major">Computer Science</p>
+                <div class="interests-tags">
+                  <span class="tag">Art</span>
+                  <span class="tag">Music</span>
+                </div>
+              </div>
+            </div>
+            {{/each}}
+          </div>
+
+          <button class="btn-primary ripple">Discover More Matches</button>
+        </section>
+
+        <!-- Activity Section -->
+        <section class="card-section activity-section">
+          <div class="section-header">
+            <h2>Recent Activity</h2>
+          </div>
+
+          <div class="activity-timeline">
+            <div class="activity-item">
+              <div class="activity-icon connection">
+                <i class='bx bx-user-plus'></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-header">
+                  <h3>New Connection</h3>
+                  <span class="activity-time">2h ago</span>
+                </div>
+                <p>You and Emily Smith are now connected.</p>
+              </div>
+            </div>
+
+            <div class="activity-item">
+              <div class="activity-icon profile">
+                <i class='bx bx-user'></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-header">
+                  <h3>Profile Viewed</h3>
+                  <span class="activity-time">5h ago</span>
+                </div>
+                <p>Alex Taylor viewed your profile.</p>
+              </div>
+            </div>
+
+            <div class="activity-item">
+              <div class="activity-icon message">
+                <i class='bx bx-message-rounded'></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-header">
+                  <h3>New Message</h3>
+                  <span class="activity-time">Yesterday</span>
+                </div>
+                <p>Ryan Johnson sent you a message.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Right Sidebar -->
+      <div class="sidebar-column">
+
+        <!-- Profile Summary -->
+        <section class="card-section profile-card">
+          <div class="section-header">
+            <h2>Your Profile</h2>
+            <a href="/edit-profile" class="edit-link">Edit Profile</a>
+          </div>
+
+          <div class="profile-info">
+            <div class="profile-avatar">
+              {{#if user.profile.photo}}
+                <img src="/photo/{{user._id}}?t={{timestamp}}" alt="Profile Photo" class="profile-photo">
+              {{else}}
+                {{userInitials}}
+              {{/if}}
+            </div>
+            <div class="profile-details">
+              <h3>{{user.profile.firstName}} {{user.profile.lastName}}</h3>
+              <p>{{user.profile.major}}, Year {{user.profile.yearOfStudy}}</p>
+            </div>
+          </div>
+
+          <div class="profile-bio">
+            <h3>About Me</h3>
+            <p>{{user.profile.bio}}</p>
+          </div>
+
+          <div class="profile-interests">
+            <h3>Interests</h3>
+            <div class="interests-tags">
+              {{#each user.profile.interests.hobbies}}
+                <span class="tag">{{this}}</span>
+              {{else}}
+                <span class="tag">Psychology</span>
+                <span class="tag">Hiking</span>
+                <span class="tag">Photography</span>
+                <span class="tag">Coffee</span>
+                <span class="tag">Books</span>
+              {{/each}}
+            </div>
+
+            <!-- Edit Interests Button -->
+            <div style="margin-top: 1rem; text-align: center;">
+              <a href="/interests" class="edit-link" style="display:inline-block; padding:0.5rem 1rem; background:linear-gradient(135deg, var(--primary), var(--secondary)); color:white; border-radius:9999px; font-weight:600; transition:all 0.3s ease;">
+                <i class='bx bx-edit'></i> Edit Interests
+              </a>
+            </div>
+
+          </div>
+
+          {{#unless profileComplete}}
+          <div class="profile-completion">
+            <div class="completion-header">
+              <h3>Profile Completion</h3>
+              <span class="completion-percentage">{{profileCompletion}}%</span>
+            </div>
+            <div class="completion-bar-container">
+              <div class="completion-bar" style="width: {{profileCompletion}}%;"></div>
+            </div>
+          </div>
+          {{/unless}}
+
+        </section>
+
+        <!-- Events -->
+        <section class="card-section events-card">
+          <div class="section-header">
+            <h2>Campus Events</h2>
+          </div>
+
+          <div class="events-list">
+            <div class="event-item">
+              <div class="event-details">
+                <h3>Psychology Club Mixer</h3>
+                <p>Tomorrow, 6:00 PM</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+    </div>
+
+  </main>
+
 </body>
 </html>

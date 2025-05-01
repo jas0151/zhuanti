@@ -11,13 +11,14 @@ class PhotoController {
         this.storage = multer.diskStorage({
             destination: (req, file, cb) => {
                 const dir = path.join(__dirname, '../uploads/profiles');
+                // Create directory if it doesn't exist
                 if (!fs.existsSync(dir)) {
                     fs.mkdirSync(dir, { recursive: true });
                 }
                 cb(null, dir);
             },
             filename: (req, file, cb) => {
-                // Use a fixed naming pattern based on user ID
+                // Use a consistent naming pattern based on user ID
                 const userId = req.session.userId;
                 const fileExt = path.extname(file.originalname);
                 // This ensures the filename is always predictable
@@ -47,27 +48,55 @@ class PhotoController {
 
     uploadPhoto(req, res) {
         try {
+            console.log("Starting photo upload process");
+            
             // Use a Promise-based approach for better error handling
             new Promise((resolve, reject) => {
                 this.upload(req, res, function(err) {
-                    if (err) reject(err);
-                    else resolve(req.file);
+                    if (err) {
+                        console.error("Upload error:", err);
+                        reject(err);
+                    } else {
+                        console.log("Upload completed successfully");
+                        resolve(req.file);
+                    }
                 });
             })
             .then(async (file) => {
                 if (!file) {
+                    console.error("No file was uploaded");
                     return res.status(400).json({
                         success: false,
                         message: "No file was selected."
                     });
                 }
+                
+                console.log("File uploaded:", file.filename);
+                
+                // Log user info before update
+                const beforeUser = await this.userModel.findById(req.session.userId);
+                console.log("User before update:", {
+                    userId: req.session.userId,
+                    hasProfile: beforeUser.hasProfile,
+                    currentPhoto: beforeUser.profile?.photo
+                });
     
-                // Update user with filename only (don't store file data in DB)
+                // Ensure user has a profile object
+                const updateQuery = beforeUser.profile 
+                    ? { 'profile.photo': file.filename, 'profile.updatedAt': new Date() }
+                    : { profile: { photo: file.filename, updatedAt: new Date() } };
+                
+                // Update user with filename
                 await this.userModel.findByIdAndUpdate(req.session.userId, {
-                    $set: {
-                        'profile.photo': file.filename,
-                        'profile.updatedAt': new Date()
-                    }
+                    $set: updateQuery
+                });
+                
+                // Log user info after update for verification
+                const afterUser = await this.userModel.findById(req.session.userId);
+                console.log("User after update:", {
+                    userId: req.session.userId,
+                    hasProfile: afterUser.hasProfile,
+                    updatedPhoto: afterUser.profile?.photo
                 });
     
                 // Redirect appropriately
@@ -79,7 +108,7 @@ class PhotoController {
                 }
             })
             .catch(error => {
-                console.error("Error uploading photo:", error);
+                console.error("Error in upload process:", error);
                 res.status(400).json({
                     success: false,
                     message: error.message || "Error uploading photo"

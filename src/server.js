@@ -115,6 +115,12 @@ class Server {
             }
             next();
         });
+        
+        // Make a timestamp available for cache busting
+        this.app.use((req, res, next) => {
+            res.locals.timestamp = new Date().getTime();
+            next();
+        });
     }
 
     configureRoutes() {
@@ -314,6 +320,16 @@ class Server {
             photoController.uploadPhoto(req, res);
         });
         
+        // Photo retrieval routes with improved path handling
+        this.app.get("/photo/:userId", (req, res) => {
+            // Add cache busting with timestamp query param
+            photoViewController.getProfilePhoto(req, res);
+        });
+        
+        this.app.get("/gallery-photo/:userId/:photoId", (req, res) => {
+            photoViewController.getGalleryPhoto(req, res);
+        });
+        
         // Interests routes
         this.app.get("/interests", this.isAuthenticated, (req, res) => {
             interestController.getInterests(req, res);
@@ -349,14 +365,6 @@ class Server {
         
         this.app.get("/main", this.isAuthenticated, (req, res) => {
             mainController.getDashboard(req, res);
-        });
-        
-        this.app.get("/photo/:userId", (req, res) => {
-            photoViewController.getProfilePhoto(req, res);
-        });
-        
-        this.app.get("/gallery-photo/:userId/:photoId", (req, res) => {
-            photoViewController.getGalleryPhoto(req, res);
         });
         
         this.app.get("/gallery", this.isAuthenticated, (req, res) => {

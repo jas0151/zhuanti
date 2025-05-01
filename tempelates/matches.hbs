@@ -11,19 +11,19 @@
 <body>
     <!-- Navbar -->
     <nav class="navbar">
-        <div class="nav-container">
-            <a href="/" class="nav-logo">CampusMatch</a>
-            <div class="nav-menu">
-                <ul class="nav-list">
-                    <li><a href="/main"><i class='bx bx-home'></i> Dashboard</a></li>
-                    <li><a href="/gallery"><i class='bx bx-images'></i> Gallery</a></li>
-                    <li><a href="/matches" class="active"><i class='bx bx-heart'></i> Matches</a></li>
-                    <li><a href="/connections"><i class='bx bx-user-check'></i> Connections</a></li>
-                    <li><a href="/logout" class="nav-signup"><i class='bx bx-log-out'></i> Logout</a></li>
-                </ul>
-            </div>
+    <div class="nav-container">
+        <a href="/" class="nav-logo">CampusMatch</a>
+        <div class="nav-menu">
+            <ul class="nav-list">
+                <li><a href="/main" class="nav-link"><i class='bx bx-home'></i> <span>Dashboard</span></a></li>
+                <li><a href="/gallery" class="nav-link"><i class='bx bx-images'></i> <span>Gallery</span></a></li>
+                <li><a href="/matches" class="nav-link active"><i class='bx bx-heart'></i> <span>Matches</span></a></li>
+                <li><a href="/connections" class="nav-link"><i class='bx bx-user-check'></i> <span>Connections</span></a></li>
+                <li><a href="/logout" class="nav-signup"><i class='bx bx-log-out'></i> <span>Logout</span></a></li>
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
 
     <div class="matches-container">
         <!-- Modern header with background animation -->
@@ -35,16 +35,6 @@
             </div>
             <h1>Find Your Perfect Match</h1>
             <p>Discover fellow students who share your interests, academic goals, and campus lifestyle</p>
-        </div>
-
-        <!-- Match Threshold Info Banner -->
-        <div class="match-info-banner">
-            <div class="container">
-                <div class="match-info-content">
-                    <i class='bx bx-info-circle'></i>
-                    <p>Our matching algorithm shows only users with a <strong>65% or higher</strong> compatibility score. This ensures quality connections based on shared interests, academic background, and other factors.</p>
-                </div>
-            </div>
         </div>
 
         <!-- Modern Filter Container -->
@@ -598,25 +588,6 @@
             margin-bottom: 1.5rem;
             border-radius: 0.5rem;
         }
-
-        .match-info-content {
-            display: flex;
-            align-items: center;
-            padding: 1rem;
-        }
-
-        .match-info-content i {
-            font-size: 1.5rem;
-            color: #3b82f6;
-            margin-right: 0.75rem;
-        }
-
-        .match-info-content p {
-            margin: 0;
-            color: #4b5563;
-            font-size: 0.9rem;
-        }
-
         .empty-state {
             display: flex;
             flex-direction: column;
