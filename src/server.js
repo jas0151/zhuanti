@@ -93,6 +93,7 @@ class Server {
             if (req.session && req.session.userId) {
                 try {
                     // Update last active timestamp
+                    const UserModel = require("./userModel");
                     await mongoose.model('LogInCollection').updateOne(
                         { _id: req.session.userId },
                         { $set: { lastActive: new Date() } }

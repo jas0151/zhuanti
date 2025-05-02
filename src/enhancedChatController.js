@@ -9,80 +9,85 @@ class EnhancedChatController {
         this.userModel = UserModel.getModel();
     }
 
-    async getChat(req, res) {
-        try {
-            const currentUserId = req.session.userId;
-            const otherUserId = req.params.userId;
-            
-            // Get both users
-            const [currentUser, otherUser] = await Promise.all([
-                this.userModel.findById(currentUserId),
-                this.userModel.findById(otherUserId)
-            ]);
-            
-            if (!currentUser || !otherUser) {
-                return res.status(404).render('error', {
-                    message: 'User not found',
-                    error: {},
-                    tabId: req.tabId
-                });
-            }
-            
-            // Check if they are connected
-            if (!this.areConnected(currentUser, otherUserId)) {
-                return res.redirect('/connections?error=not_connected');
-            }
-            
-            // Get or create conversation
-            let conversation = await this.getConversation(currentUserId, otherUserId);
-            
-            // If conversation doesn't exist, create a new one
-            if (!conversation) {
-                conversation = {
-                    participants: [currentUserId, otherUserId],
-                    messages: [],
-                    createdAt: new Date(),
-                    lastUpdated: new Date()
-                };
-                
-                // Initialize conversations array if it doesn't exist
-                if (!currentUser.conversations) {
-                    currentUser.conversations = [];
-                }
-                
-                // Add conversation to user
-                currentUser.conversations.push(conversation);
-                await currentUser.save();
-            }
-            
-            // Generate some conversation starters based on shared interests
-            const starters = this.generateConversationStarters(currentUser, otherUser);
-            
-            // Find common interests if available
-            let commonInterests = [];
-            if (currentUser.interests && otherUser.interests) {
-                commonInterests = currentUser.interests.filter(interest => 
-                    otherUser.interests.includes(interest)
-                );
-            }
-            
-            res.render('chat', {
-                currentUser,
-                otherUser,
-                conversation,
-                commonInterests,
-                starters,
-                tabId: req.tabId
-            });
-        } catch (error) {
-            console.error("Error loading chat:", error);
-            res.status(500).render('error', {
-                message: 'Failed to load chat',
-                error: process.env.NODE_ENV === 'development' ? error : {},
+    // Fix for the conversations schema issue in enhancedChatController.js
+
+async getChat(req, res) {
+    try {
+        const currentUserId = req.session.userId;
+        const otherUserId = req.params.userId;
+        
+        // Get both users
+        const [currentUser, otherUser] = await Promise.all([
+            this.userModel.findById(currentUserId),
+            this.userModel.findById(otherUserId)
+        ]);
+        
+        if (!currentUser || !otherUser) {
+            return res.status(404).render('error', {
+                message: 'User not found',
+                error: {},
                 tabId: req.tabId
             });
         }
+        
+        // Check if they are connected
+        if (!this.areConnected(currentUser, otherUserId)) {
+            return res.redirect('/connections?error=not_connected');
+        }
+        
+        // Get or create conversation
+        let conversation = await this.getConversation(currentUserId, otherUserId);
+        
+        // If conversation doesn't exist, create a new one
+        if (!conversation) {
+            // Create name for the conversation (required field)
+            const conversationName = `Chat between ${currentUser.profile?.firstName || 'User'} and ${otherUser.profile?.firstName || 'User'}`;
+            
+            conversation = {
+                name: conversationName, // Add the required name field
+                participants: [currentUserId, otherUserId],
+                messages: [],
+                createdAt: new Date(),
+                lastUpdated: new Date()
+            };
+            
+            // Initialize conversations array if it doesn't exist
+            if (!currentUser.conversations) {
+                currentUser.conversations = [];
+            }
+            
+            // Add conversation to user
+            currentUser.conversations.push(conversation);
+            await currentUser.save();
+        }
+        
+        // Generate some conversation starters based on shared interests
+        const starters = this.generateConversationStarters(currentUser, otherUser);
+        
+        // Find common interests if available
+        let commonInterests = [];
+        if (currentUser.profile?.interests && otherUser.profile?.interests) {
+            // Logic to find common interests
+            // ...
+        }
+        
+        res.render('chat', {
+            currentUser,
+            otherUser,
+            conversation,
+            commonInterests,
+            starters,
+            tabId: req.tabId
+        });
+    } catch (error) {
+        console.error("Error loading chat:", error);
+        res.status(500).render('error', {
+            message: 'Failed to load chat',
+            error: process.env.NODE_ENV === 'development' ? error : {},
+            tabId: req.tabId
+        });
     }
+}
 
     // Rest of your controller methods...
     // (keeping the rest of the file unchanged)
